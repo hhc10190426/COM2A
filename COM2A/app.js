@@ -1,317 +1,138 @@
-// ===== 模擬資料 =====
+// ===== Polymarket API 設定 =====
+const GAMMA_API = "https://gamma-api.polymarket.com";
+const DATA_API  = "https://data-api.polymarket.com";
+const WHALE_THRESHOLD = 5000;
 
-const MARKETS_DATA = [
-  {
-    id: 1,
-    platform: "Polymarket",
-    question: "Will Bitcoin reach $100,000 before April 2025?",
-    icon: "https://polymarket-upload.s3.us-east-2.amazonaws.com/BTC+fullsize.png",
-    yesPct: 62,
-    volume24h: "$4.2M",
-    openInterest: "$18.5M",
-    totalMarkets: 1,
-    endDate: "Apr 30, 2025",
-    smartFlow: "+$128K",
-    flowPositive: true,
-  },
-  {
-    id: 2,
-    platform: "Kalshi",
-    question: "Will the Federal Reserve cut interest rates in Q1 2025?",
-    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Bitcoin.svg/800px-Bitcoin.svg.png",
-    yesPct: 34,
-    volume24h: "$2.1M",
-    openInterest: "$9.8M",
-    totalMarkets: 3,
-    endDate: "Mar 31, 2025",
-    smartFlow: "-$45K",
-    flowPositive: false,
-  },
-  {
-    id: 3,
-    platform: "Polymarket",
-    question: "Will Ethereum ETF daily net inflows exceed $500M in March?",
-    icon: "https://polymarket-upload.s3.us-east-2.amazonaws.com/ETH+fullsize.jpg",
-    yesPct: 48,
-    volume24h: "$3.7M",
-    openInterest: "$14.2M",
-    totalMarkets: 1,
-    endDate: "Mar 31, 2025",
-    smartFlow: "+$67K",
-    flowPositive: true,
-  },
-  {
-    id: 4,
-    platform: "Kalshi",
-    question: "Will the US unemployment rate remain below 4.5% through June 2025?",
-    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Flag_of_the_United_States.svg/320px-Flag_of_the_United_States.svg.png",
-    yesPct: 78,
-    volume24h: "$890K",
-    openInterest: "$5.6M",
-    totalMarkets: 2,
-    endDate: "Jun 30, 2025",
-    smartFlow: "+$22K",
-    flowPositive: true,
-  },
-  {
-    id: 5,
-    platform: "Polymarket",
-    question: "Will Donald Trump sign an executive order on crypto regulation by April 2025?",
-    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Flag_of_the_United_States.svg/320px-Flag_of_the_United_States.svg.png",
-    yesPct: 55,
-    volume24h: "$6.4M",
-    openInterest: "$22.1M",
-    totalMarkets: 1,
-    endDate: "Apr 30, 2025",
-    smartFlow: "+$204K",
-    flowPositive: true,
-  },
-  {
-    id: 6,
-    platform: "Opinion",
-    question: "Will Solana outperform Bitcoin in Q2 2025?",
-    icon: "https://upload.wikimedia.org/wikipedia/en/b/b9/Solana_logo.png",
-    yesPct: 41,
-    volume24h: "$1.3M",
-    openInterest: "$7.3M",
-    totalMarkets: 1,
-    endDate: "Jun 30, 2025",
-    smartFlow: "-$12K",
-    flowPositive: false,
-  },
-  {
-    id: 7,
-    platform: "Limitless",
-    question: "Will AI-related stocks outperform S&P 500 in 2025?",
-    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/320px-Amazon_logo.svg.png",
-    yesPct: 71,
-    volume24h: "$2.9M",
-    openInterest: "$11.4M",
-    totalMarkets: 5,
-    endDate: "Dec 31, 2025",
-    smartFlow: "+$87K",
-    flowPositive: true,
-  },
-  {
-    id: 8,
-    platform: "Polymarket",
-    question: "Will Bitcoin Up or Down - March 11, 4:15AM-4:20AM ET",
-    icon: "https://polymarket-upload.s3.us-east-2.amazonaws.com/BTC+fullsize.png",
-    yesPct: 5,
-    volume24h: "$320K",
-    openInterest: "$1.2M",
-    totalMarkets: 1,
-    endDate: "Mar 11, 2025 4:20AM",
-    smartFlow: "+$8K",
-    flowPositive: true,
-  },
+// ===== API 狀態顯示 =====
+function setApiStatus(state, text) {
+  const dot  = document.querySelector(".status-dot");
+  const label = document.getElementById("api-status-text");
+  if (!dot || !label) return;
+  dot.className = "status-dot " + state;
+  label.textContent = text;
+}
+
+// ===== 格式化工具 =====
+function fmtUSD(val) {
+  const n = parseFloat(val) || 0;
+  if (n >= 1_000_000) return "$" + (n / 1_000_000).toFixed(2) + "M";
+  if (n >= 1_000)     return "$" + (n / 1_000).toFixed(1) + "K";
+  return "$" + n.toFixed(2);
+}
+
+function fmtPct(val) {
+  return (parseFloat(val) * 100).toFixed(0);
+}
+
+function timeAgo(ts) {
+  const diff = Date.now() - (ts * 1000 || ts);
+  const s = Math.floor(diff / 1000);
+  if (s < 60)  return "just now";
+  if (s < 3600) return Math.floor(s / 60) + " min ago";
+  if (s < 86400) return Math.floor(s / 3600) + " hr ago";
+  return Math.floor(s / 86400) + " days ago";
+}
+
+const AVATAR_COLORS = [
+  "#6366f1","#8b5cf6","#ec4899","#f59e0b",
+  "#22c55e","#06b6d4","#ef4444","#3b82f6","#10b981","#f97316",
 ];
 
-const TRADES_DATA = [
-  {
-    trader: "Polymarket Trader",
-    avatarText: "PT",
-    action: "bought",
-    shares: "1.21",
-    side: "No",
-    market: "Bitcoin Up or Down - March 11, 4:15AM-4:20AM ET",
-    price: "95.0¢",
-    amount: "$1.15",
-    time: "just now",
-    color: "#6366f1",
-  },
-  {
-    trader: "Polymarket Trader",
-    avatarText: "PT",
-    action: "bought",
-    shares: "209.28",
-    side: "No",
-    market: "Bitcoin Up or Down - March 11, 4:15AM-4:20AM ET",
-    price: "95.6¢",
-    amount: "$200.00",
-    time: "1 min ago",
-    color: "#8b5cf6",
-  },
-  {
-    trader: "Sentimental-Finance",
-    avatarText: "SF",
-    action: "bought",
-    shares: "5.15",
-    side: "Yes",
-    market: "Bitcoin Up or Down - March 11, 4:15AM-4:30AM ET",
-    price: "29.9¢",
-    amount: "$1.54",
-    time: "2 min ago",
-    color: "#22c55e",
-  },
-  {
-    trader: "Unimportant-Calm",
-    avatarText: "UC",
-    action: "sold",
-    shares: "10.20",
-    side: "No",
-    market: "Ethereum Up or Down - March 11, 4:15AM-4:20AM ET",
-    price: "98.0¢",
-    amount: "$10.00",
-    time: "2 min ago",
-    color: "#ef4444",
-  },
-  {
-    trader: "Physical-Downtown",
-    avatarText: "PD",
-    action: "bought",
-    shares: "50.00",
-    side: "Yes",
-    market: "Ethereum Up or Down - March 11, 4:15AM-4:20AM ET",
-    price: "2.0¢",
-    amount: "$1.00",
-    time: "3 min ago",
-    color: "#f59e0b",
-  },
-  {
-    trader: "Esteemed-Emphasis",
-    avatarText: "EE",
-    action: "bought",
-    shares: "26.50",
-    side: "No",
-    market: "Bitcoin Up or Down - March 11, 4:15AM-4:30AM ET",
-    price: "72.0¢",
-    amount: "$19.07",
-    time: "3 min ago",
-    color: "#06b6d4",
-  },
-  {
-    trader: "Warlike-Shoemaker",
-    avatarText: "WS",
-    action: "sold",
-    shares: "3.66",
-    side: "Yes",
-    market: "Strait of Hormuz traffic returns to normal by April 30?",
-    price: "54.0¢",
-    amount: "$1.98",
-    time: "4 min ago",
-    color: "#ec4899",
-  },
-  {
-    trader: "Likable-Showstopper",
-    avatarText: "LS",
-    action: "bought",
-    shares: "1.04",
-    side: "No",
-    market: "Bitcoin Up or Down - March 11, 4:15AM-4:20AM ET",
-    price: "96.0¢",
-    amount: "$1.00",
-    time: "5 min ago",
-    color: "#10b981",
-  },
-];
+function walletColor(addr) {
+  let hash = 0;
+  for (let i = 0; i < (addr || "").length; i++) hash = addr.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
 
-const NEWS_DATA = [
-  {
-    headline: "Bitcoin Surges Past $85,000 as Institutional Demand Drives Market Rally",
-    source: "CoinDesk",
-    time: "10 min ago",
-    url: "https://news.google.com/search?q=Bitcoin+surges+85000",
-  },
-  {
-    headline: "Federal Reserve Officials Signal Patience on Rate Cuts Amid Inflation Concerns",
-    source: "Reuters",
-    time: "25 min ago",
-    url: "https://news.google.com/search?q=Federal+Reserve+rate+cuts+2025",
-  },
-  {
-    headline: "Ethereum ETF Sees Record $420M Inflows in Single Trading Session",
-    source: "Bloomberg",
-    time: "1 hr ago",
-    url: "https://news.google.com/search?q=Ethereum+ETF+inflows+record",
-  },
-  {
-    headline: "Trump Signs Executive Order Establishing US Strategic Bitcoin Reserve",
-    source: "WSJ",
-    time: "2 hr ago",
-    url: "https://news.google.com/search?q=Trump+Bitcoin+reserve+executive+order",
-  },
-  {
-    headline: "SEC Approves Multiple Spot Crypto ETF Applications in Historic Decision",
-    source: "Financial Times",
-    time: "3 hr ago",
-    url: "https://news.google.com/search?q=SEC+crypto+ETF+approval+2025",
-  },
-  {
-    headline: "Polymarket Hits $1B in Monthly Trading Volume for First Time",
-    source: "The Block",
-    time: "4 hr ago",
-    url: "https://news.google.com/search?q=Polymarket+1+billion+trading+volume",
-  },
-];
+function walletInitials(pseudonym, addr) {
+  if (pseudonym) return pseudonym.slice(0, 2).toUpperCase();
+  return (addr || "??").slice(2, 4).toUpperCase();
+}
+
+// ===== 取得 Polymarket 市場列表 =====
+async function fetchMarkets() {
+  const url = `${GAMMA_API}/markets?active=true&closed=false&limit=20&order=volume24hr&ascending=false`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Markets API ${res.status}`);
+  return res.json();
+}
+
+// ===== 取得最近交易 =====
+async function fetchTrades() {
+  const url = `${DATA_API}/activity?limit=30`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Activity API ${res.status}`);
+  return res.json();
+}
 
 // ===== 渲染市場列表 =====
 function renderMarkets(markets) {
   const container = document.getElementById("markets-list");
   container.innerHTML = "";
 
-  if (markets.length === 0) {
-    container.innerHTML = `<div class="empty-state">No markets available for this category.</div>`;
+  if (!markets || markets.length === 0) {
+    container.innerHTML = `<div class="empty-state">No active markets found.</div>`;
     return;
   }
 
   markets.forEach((m) => {
+    const yesPriceRaw = Array.isArray(m.outcomePrices)
+      ? parseFloat(m.outcomePrices[0])
+      : parseFloat(m.bestAsk ?? 0.5);
+    const yesPct   = Math.round(yesPriceRaw * 100);
+    const noPct    = 100 - yesPct;
+    const vol24h   = fmtUSD(m.volume24hr ?? m.volume24h ?? 0);
+    const oi       = fmtUSD(m.liquidity ?? m.openInterest ?? 0);
+    const endDate  = m.endDate
+      ? new Date(m.endDate).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })
+      : "TBD";
+    const icon     = m.image || m.icon || "";
+    const isYes    = yesPct >= 50;
+
     const card = document.createElement("div");
     card.className = "market-card";
-    card.style.cursor = "pointer";
-
-    const yesWidth = m.yesPct;
-    const noWidth = 100 - m.yesPct;
-    const isYesMajority = m.yesPct >= 50;
 
     card.innerHTML = `
       <div class="market-header">
-        <img class="market-icon" src="${m.icon}" alt="${m.question}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22><rect width=%2244%22 height=%2244%22 rx=%2210%22 fill=%22%231e1e2a%22/><text x=%2222%22 y=%2228%22 text-anchor=%22middle%22 fill=%22%236366f1%22 font-size=%2218%22>?</text></svg>'"/>
+        <img class="market-icon" src="${icon}" alt=""
+          onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22><rect width=%2244%22 height=%2244%22 rx=%2210%22 fill=%22%231e1e2a%22/><text x=%2222%22 y=%2228%22 text-anchor=%22middle%22 fill=%22%236366f1%22 font-size=%2218%22>P</text></svg>'"/>
         <div class="market-info">
           <div class="market-question">${m.question}</div>
           <div class="market-meta">
-            <span class="platform-tag">${m.platform}</span>
-            <span class="market-end-date">Ends ${m.endDate}</span>
+            <span class="platform-tag">Polymarket</span>
+            <span class="market-end-date">Ends ${endDate}</span>
           </div>
         </div>
         <div class="stat-item" style="text-align:right;flex-shrink:0">
           <div class="stat-label">YES</div>
-          <div class="stat-value ${isYesMajority ? 'green' : 'red'}">${m.yesPct}¢</div>
+          <div class="stat-value ${isYes ? "green" : "red"}">${yesPct}¢</div>
         </div>
       </div>
       <div class="yes-no-bar">
-        <div class="bar-yes" style="width:${yesWidth}%"></div>
-        <div class="bar-no" style="width:${noWidth}%"></div>
+        <div class="bar-yes" style="width:${yesPct}%"></div>
+        <div class="bar-no"  style="width:${noPct}%"></div>
       </div>
       <div class="market-stats">
         <div class="stat-item">
-          <div class="stat-label">Smart Flow (24h)</div>
-          <div class="stat-value ${m.flowPositive ? 'green' : 'red'}">${m.smartFlow}</div>
-        </div>
-        <div class="stat-item">
           <div class="stat-label">24h Volume</div>
-          <div class="stat-value">${m.volume24h}</div>
+          <div class="stat-value">${vol24h}</div>
         </div>
         <div class="stat-item">
-          <div class="stat-label">Open Interest</div>
-          <div class="stat-value">${m.openInterest}</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Markets</div>
-          <div class="stat-value accent">${m.totalMarkets}</div>
+          <div class="stat-label">Liquidity</div>
+          <div class="stat-value">${oi}</div>
         </div>
       </div>
       <div class="market-actions">
-        <button class="btn-trade yes-btn" onclick="event.stopPropagation(); showTradeModal('${m.id}', 'Yes')">
-          Buy YES &nbsp;<strong>${m.yesPct}¢</strong>
+        <button class="btn-trade yes-btn" onclick="event.stopPropagation(); openBuyModal(event, ${JSON.stringify(m.question).replace(/"/g,"&quot;")}, 'Yes', ${yesPct})">
+          Buy YES &nbsp;<strong>${yesPct}¢</strong>
         </button>
-        <button class="btn-trade no-btn" onclick="event.stopPropagation(); showTradeModal('${m.id}', 'No')">
-          Buy NO &nbsp;<strong>${100 - m.yesPct}¢</strong>
+        <button class="btn-trade no-btn" onclick="event.stopPropagation(); openBuyModal(event, ${JSON.stringify(m.question).replace(/"/g,"&quot;")}, 'No', ${noPct})">
+          Buy NO &nbsp;<strong>${noPct}¢</strong>
         </button>
       </div>
     `;
 
-    card.addEventListener("click", () => openMarketDetail(m));
+    card.addEventListener("click", () => openMarketDetailFromApi(m, yesPct, noPct, vol24h, oi, endDate, icon));
     container.appendChild(card);
   });
 }
@@ -321,41 +142,77 @@ function renderTrades(trades) {
   const container = document.getElementById("trades-list");
   container.innerHTML = "";
 
-  trades.forEach((t) => {
-    const item = document.createElement("div");
-    item.className = "trade-item";
+  if (!trades || trades.length === 0) {
+    container.innerHTML = `<div style="padding:16px 18px;color:var(--text-muted);font-size:13px">No recent trades.</div>`;
+    return;
+  }
 
-    const actionClass = t.action === "bought" ? "buy" : "sell";
-    const sideClass = t.side === "Yes" ? "yes-tag" : "no-tag";
+  trades.forEach((t) => {
+    // 支援兩種 API 欄位命名
+    const pseudonym = t.pseudonym || t.name || "";
+    const wallet    = t.proxyWallet || t.maker || t.address || "";
+    const side      = (t.side || t.outcome || "Yes");
+    const sideLabel = side.toLowerCase().includes("yes") || side === "BUY" ? "Yes" : "No";
+    const action    = (t.type || "Buy").toLowerCase().includes("sell") ? "sold" : "bought";
+    const price     = parseFloat(t.price || 0);
+    const size      = parseFloat(t.size  || t.shares || 0);
+    const amount    = parseFloat(t.amount || (price * size)) || 0;
+    const ts        = t.timestamp || t.createdAt || Date.now() / 1000;
+    const title     = t.title || t.market || t.question || "";
+    const isWhale   = amount >= WHALE_THRESHOLD;
+
+    const color     = walletColor(wallet);
+    const initials  = walletInitials(pseudonym, wallet);
+    const displayName = pseudonym || (wallet ? wallet.slice(0, 6) + "..." + wallet.slice(-4) : "Trader");
+    const actionClass = action === "bought" ? "buy" : "sell";
+    const sideClass   = sideLabel === "Yes" ? "yes-tag" : "no-tag";
+
+    const item = document.createElement("div");
+    item.className = "trade-item" + (isWhale ? " trade-whale" : "");
 
     item.innerHTML = `
-      <div class="trade-avatar-placeholder" style="background: linear-gradient(135deg, ${t.color}, ${t.color}99)">
-        ${t.avatarText}
+      ${isWhale ? `<div class="whale-bar"></div>` : ""}
+      <div class="trade-avatar-placeholder" style="background:linear-gradient(135deg,${color},${color}99)">
+        ${initials}
       </div>
       <div class="trade-content">
-        <div class="trade-trader">${t.trader}</div>
-        <div class="trade-action">
-          <span class="${actionClass}">${t.action}</span>
-          ${t.shares} shares
-          <span class="${sideClass}">${t.side}</span>
-          at ${t.price} (${t.amount})
+        <div class="trade-trader">
+          ${isWhale ? `<span class="whale-badge">🐳 WHALE</span>` : ""}
+          ${displayName}
         </div>
-        <div class="trade-market">${t.market}</div>
-        <div class="trade-time">${t.time}</div>
+        <div class="trade-action">
+          <span class="${actionClass}">${action}</span>
+          ${size > 0 ? size.toFixed(2) + " shares " : ""}
+          <span class="${sideClass}">${sideLabel}</span>
+          at ${(price * 100).toFixed(1)}¢
+          <span class="${isWhale ? "whale-amount" : ""}">($${amount.toFixed(2)})</span>
+        </div>
+        <div class="trade-market">${title}</div>
+        <div class="trade-time">${timeAgo(ts)}</div>
       </div>
       <div class="trade-arrow">›</div>
     `;
 
-    item.addEventListener("click", () => showTraderProfile(t));
+    item.addEventListener("click", () => showTraderProfile({ trader: displayName, avatarText: initials, action, shares: size.toFixed(2), side: sideLabel, market: title, price: (price * 100).toFixed(1) + "¢", amount: "$" + amount.toFixed(2), time: timeAgo(ts), color }));
     container.appendChild(item);
+
+    if (isWhale) triggerWhaleAlert({ trader: displayName, action, side: sideLabel, amount: "$" + amount.toFixed(2), market: title, color, avatarText: initials });
   });
 }
 
-// ===== 渲染新聞 =====
+// ===== 新聞渲染 =====
+const NEWS_DATA = [
+  { headline: "Bitcoin Surges Past $85,000 as Institutional Demand Drives Market Rally", source: "CoinDesk", time: "10 min ago", url: "https://news.google.com/search?q=Bitcoin+surges+85000" },
+  { headline: "Federal Reserve Officials Signal Patience on Rate Cuts Amid Inflation Concerns", source: "Reuters", time: "25 min ago", url: "https://news.google.com/search?q=Federal+Reserve+rate+cuts+2025" },
+  { headline: "Ethereum ETF Sees Record $420M Inflows in Single Trading Session", source: "Bloomberg", time: "1 hr ago", url: "https://news.google.com/search?q=Ethereum+ETF+inflows+record" },
+  { headline: "Trump Signs Executive Order Establishing US Strategic Bitcoin Reserve", source: "WSJ", time: "2 hr ago", url: "https://news.google.com/search?q=Trump+Bitcoin+reserve+executive+order" },
+  { headline: "SEC Approves Multiple Spot Crypto ETF Applications in Historic Decision", source: "Financial Times", time: "3 hr ago", url: "https://news.google.com/search?q=SEC+crypto+ETF+approval+2025" },
+  { headline: "Polymarket Hits $1B in Monthly Trading Volume for First Time", source: "The Block", time: "4 hr ago", url: "https://news.google.com/search?q=Polymarket+1+billion+trading+volume" },
+];
+
 function renderNews(news) {
   const container = document.getElementById("news-list");
   container.innerHTML = "";
-
   news.forEach((n) => {
     const item = document.createElement("div");
     item.className = "news-item";
@@ -372,164 +229,158 @@ function renderNews(news) {
   });
 }
 
-// ===== 分類標籤邏輯 =====
-function initTabs() {
-  const tabs = document.querySelectorAll(".tab");
+// ===== 主要載入流程 =====
+async function loadAll() {
+  setApiStatus("loading", "連接中...");
+  try {
+    const [markets, trades] = await Promise.all([fetchMarkets(), fetchTrades()]);
+    setApiStatus("live", "即時數據 · Polymarket");
+    renderMarkets(markets);
+    renderTrades(trades);
+  } catch (err) {
+    console.warn("API error:", err);
+    setApiStatus("error", "連線失敗，顯示模擬數據");
+    renderMarkets(FALLBACK_MARKETS);
+    renderTrades([]);
+    simulateLiveTrades();
+  }
+}
 
+// ===== 定期更新交易（每 15 秒）=====
+function startTradePolling() {
+  setInterval(async () => {
+    try {
+      const trades = await fetchTrades();
+      renderTrades(trades);
+    } catch (_) {}
+  }, 15000);
+}
+
+// ===== 市場篩選（用 API 資料）=====
+let cachedMarkets = [];
+
+async function initTabsWithApi() {
+  try {
+    cachedMarkets = await fetchMarkets();
+  } catch (_) {
+    cachedMarkets = FALLBACK_MARKETS;
+  }
+
+  const tabs = document.querySelectorAll(".tab");
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
       tabs.forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
-
-      const tabKey = tab.dataset.tab;
-      let filtered = MARKETS_DATA;
-
-      if (tabKey === "crypto" || tabKey === "live-crypto") {
-        filtered = MARKETS_DATA.filter((m) =>
-          m.question.toLowerCase().includes("bitcoin") ||
-          m.question.toLowerCase().includes("ethereum") ||
-          m.question.toLowerCase().includes("solana") ||
-          m.question.toLowerCase().includes("crypto")
+      const key = tab.dataset.tab;
+      let filtered = cachedMarkets;
+      if (key === "crypto" || key === "live-crypto") {
+        filtered = cachedMarkets.filter((m) =>
+          /bitcoin|ethereum|btc|eth|crypto|solana|sol/i.test(m.question || "")
         );
-      } else if (tabKey === "sports") {
-        filtered = [];
+      } else if (key === "sports") {
+        filtered = cachedMarkets.filter((m) =>
+          /nba|nfl|soccer|football|basketball|tennis|ufc|sport/i.test(m.question || "")
+        );
       }
-
       renderMarkets(filtered);
     });
   });
 }
 
-// ===== 篩選按鈕邏輯 =====
+// ===== 篩選排序 =====
 function initFilters() {
   const filterBtns = document.querySelectorAll(".filter-btn");
-
   filterBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       filterBtns.forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-
-      let sorted = [...MARKETS_DATA];
       const text = btn.textContent.trim();
-
-      if (text.includes("24h Volume")) {
-        sorted.sort((a, b) => parseFloat(b.volume24h.replace(/[$MK]/g, "")) - parseFloat(a.volume24h.replace(/[$MK]/g, "")));
-      } else if (text.includes("Open Interest")) {
-        sorted.sort((a, b) => parseFloat(b.openInterest.replace(/[$MK]/g, "")) - parseFloat(a.openInterest.replace(/[$MK]/g, "")));
-      } else if (text.includes("Total Markets")) {
-        sorted.sort((a, b) => b.totalMarkets - a.totalMarkets);
-      }
-
-      renderMarkets(sorted);
+      let order = "volume24hr";
+      if (text.includes("Open Interest")) order = "liquidity";
+      if (text.includes("Total Markets"))  order = "volume";
+      try {
+        const markets = await fetch(`${GAMMA_API}/markets?active=true&closed=false&limit=20&order=${order}&ascending=false`).then(r => r.json());
+        renderMarkets(markets);
+      } catch (_) {}
     });
   });
 }
 
-// ===== 平台篩選 =====
-function initPlatformChips() {
-  const chips = document.querySelectorAll(".platform-chip");
-
-  chips.forEach((chip) => {
-    chip.addEventListener("click", () => {
-      chips.forEach((c) => c.classList.remove("active"));
-      chip.classList.add("active");
-
-      const platformName = chip.querySelector("span").textContent;
-      const filtered = MARKETS_DATA.filter((m) => m.platform === platformName);
-      renderMarkets(filtered.length > 0 ? filtered : MARKETS_DATA);
-    });
-  });
-}
-
-// ===== 市場詳情 Modal =====
-function openMarketDetail(market) {
+// ===== 市場詳情 Modal（API 版）=====
+function openMarketDetailFromApi(m, yesPct, noPct, vol24h, oi, endDate, icon) {
   const existing = document.getElementById("market-detail-modal");
   if (existing) existing.remove();
 
-  const noPrice = 100 - market.yesPct;
   const overlay = document.createElement("div");
   overlay.id = "market-detail-modal";
   overlay.className = "modal-overlay";
   overlay.innerHTML = `
     <div class="modal-box detail-modal">
       <div class="detail-header">
-        <img src="${market.icon}" class="detail-icon" onerror="this.style.display='none'"/>
+        <img src="${icon}" class="detail-icon" onerror="this.style.display='none'"/>
         <div class="detail-title-wrap">
-          <span class="platform-tag">${market.platform}</span>
-          <h2 class="detail-title">${market.question}</h2>
-          <span class="detail-end">Ends ${market.endDate}</span>
+          <span class="platform-tag">Polymarket</span>
+          <h2 class="detail-title">${m.question}</h2>
+          <span class="detail-end">Ends ${endDate}</span>
         </div>
         <button class="modal-close" id="close-detail">✕</button>
       </div>
-
       <div class="detail-price-row">
         <div class="detail-price yes-price">
           <div class="price-label">YES</div>
-          <div class="price-value">${market.yesPct}¢</div>
+          <div class="price-value">${yesPct}¢</div>
           <div class="price-sub">per share</div>
         </div>
         <div class="detail-divider"></div>
         <div class="detail-price no-price">
           <div class="price-label">NO</div>
-          <div class="price-value">${noPrice}¢</div>
+          <div class="price-value">${noPct}¢</div>
           <div class="price-sub">per share</div>
         </div>
       </div>
-
       <div class="yes-no-bar" style="height:8px;margin:0">
-        <div class="bar-yes" style="width:${market.yesPct}%"></div>
-        <div class="bar-no" style="width:${noPrice}%"></div>
+        <div class="bar-yes" style="width:${yesPct}%"></div>
+        <div class="bar-no"  style="width:${noPct}%"></div>
       </div>
-
       <div class="detail-stats-grid">
         <div class="detail-stat">
-          <div class="stat-label">Smart Flow (24h)</div>
-          <div class="stat-value ${market.flowPositive ? 'green' : 'red'}">${market.smartFlow}</div>
-        </div>
-        <div class="detail-stat">
           <div class="stat-label">24h Volume</div>
-          <div class="stat-value">${market.volume24h}</div>
+          <div class="stat-value">${vol24h}</div>
         </div>
         <div class="detail-stat">
-          <div class="stat-label">Open Interest</div>
-          <div class="stat-value">${market.openInterest}</div>
+          <div class="stat-label">Liquidity</div>
+          <div class="stat-value">${oi}</div>
         </div>
         <div class="detail-stat">
-          <div class="stat-label">Total Markets</div>
-          <div class="stat-value accent">${market.totalMarkets}</div>
+          <div class="stat-label">End Date</div>
+          <div class="stat-value" style="font-size:12px">${endDate}</div>
+        </div>
+        <div class="detail-stat">
+          <div class="stat-label">Platform</div>
+          <div class="stat-value accent">Polymarket</div>
         </div>
       </div>
-
       <div class="detail-trade-row">
-        <button class="btn-trade yes-btn full" onclick="showTradeModal('${market.id}', 'Yes')">
-          Buy YES — ${market.yesPct}¢
+        <button class="btn-trade yes-btn full" onclick="openBuyModal(event,'${(m.question||'').replace(/'/g,"\\'")}','Yes',${yesPct})">
+          Buy YES — ${yesPct}¢
         </button>
-        <button class="btn-trade no-btn full" onclick="showTradeModal('${market.id}', 'No')">
-          Buy NO — ${noPrice}¢
+        <button class="btn-trade no-btn full" onclick="openBuyModal(event,'${(m.question||'').replace(/'/g,"\\'")}','No',${noPct})">
+          Buy NO — ${noPct}¢
         </button>
       </div>
+      ${m.url ? `<a href="${m.url}" target="_blank" class="modal-link" style="text-align:center;display:block">在 Polymarket 查看 ↗</a>` : ""}
     </div>
   `;
-
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) overlay.remove();
-  });
-  document.getElementById("close-detail")?.addEventListener("click", () => overlay.remove());
-  // bind after appending
-  overlay.querySelector("#close-detail").addEventListener("click", () => overlay.remove());
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+  overlay.querySelector("#close-detail").addEventListener("click", () => overlay.remove());
 }
 
-// ===== 交易 Modal =====
-function showTradeModal(marketId, side) {
-  const market = MARKETS_DATA.find((m) => String(m.id) === String(marketId));
-  if (!market) return;
-
+// ===== 下單 Modal =====
+function openBuyModal(event, question, side, price) {
+  if (event) event.stopPropagation();
   const existing = document.getElementById("trade-modal");
   if (existing) existing.remove();
-
-  const price = side === "Yes" ? market.yesPct : (100 - market.yesPct);
-  const sideClass = side === "Yes" ? "yes-price" : "no-price";
 
   const overlay = document.createElement("div");
   overlay.id = "trade-modal";
@@ -537,10 +388,10 @@ function showTradeModal(marketId, side) {
   overlay.innerHTML = `
     <div class="modal-box trade-modal-box">
       <div class="trade-modal-header">
-        <h3>Buy <span class="${sideClass}" style="font-weight:800">${side}</span> Shares</h3>
+        <h3>Buy <span class="${side === "Yes" ? "yes-price" : "no-price"}" style="font-weight:800">${side}</span> Shares</h3>
         <button class="modal-close" id="close-trade">✕</button>
       </div>
-      <p class="trade-modal-market">${market.question}</p>
+      <p class="trade-modal-market">${question}</p>
       <div class="trade-input-group">
         <label>Amount (USD)</label>
         <div class="trade-input-wrap">
@@ -553,11 +404,11 @@ function showTradeModal(marketId, side) {
           <span>Price per share</span>
           <span class="stat-value">${price}¢</span>
         </div>
-        <div class="trade-summary-row" id="est-shares-row">
+        <div class="trade-summary-row">
           <span>Est. shares</span>
           <span class="stat-value" id="est-shares">${(10 / (price / 100)).toFixed(2)}</span>
         </div>
-        <div class="trade-summary-row" id="est-payout-row">
+        <div class="trade-summary-row">
           <span>Est. max payout</span>
           <span class="stat-value green" id="est-payout">$${(10 / (price / 100)).toFixed(2)}</span>
         </div>
@@ -568,24 +419,22 @@ function showTradeModal(marketId, side) {
       <p class="trade-disclaimer">This is a demo. No real money is used.</p>
     </div>
   `;
-
   overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+  overlay.querySelector("#close-trade").addEventListener("click", () => overlay.remove());
 
-  document.getElementById("close-trade").addEventListener("click", () => overlay.remove());
-
-  const amountInput = document.getElementById("trade-amount");
-  amountInput.addEventListener("input", () => {
-    const amt = parseFloat(amountInput.value) || 0;
+  const input = document.getElementById("trade-amount");
+  input.addEventListener("input", () => {
+    const amt = parseFloat(input.value) || 0;
     const shares = amt / (price / 100);
     document.getElementById("est-shares").textContent = shares.toFixed(2);
-    document.getElementById("est-payout").textContent = `$${shares.toFixed(2)}`;
+    document.getElementById("est-payout").textContent = "$" + shares.toFixed(2);
   });
 
   document.getElementById("confirm-trade").addEventListener("click", () => {
-    const amt = parseFloat(amountInput.value) || 0;
+    const amt = parseFloat(input.value) || 0;
     overlay.remove();
-    showToast(`✓ Order placed: Buy ${side} $${amt.toFixed(2)} on "${market.question.slice(0, 40)}..."`);
+    showToast(`✓ 模擬下單：Buy ${side} $${amt.toFixed(2)} on "${question.slice(0,40)}..."`);
   });
 }
 
@@ -598,10 +447,10 @@ function showTraderProfile(trade) {
   overlay.id = "trader-modal";
   overlay.className = "modal-overlay";
 
-  const winRate = Math.floor(Math.random() * 30 + 50);
-  const totalTrades = Math.floor(Math.random() * 500 + 50);
-  const pnl = (Math.random() * 5000 - 1000).toFixed(2);
-  const pnlPositive = parseFloat(pnl) >= 0;
+  const winRate  = Math.floor(Math.random() * 30 + 50);
+  const total    = Math.floor(Math.random() * 500 + 50);
+  const pnl      = (Math.random() * 5000 - 1000).toFixed(2);
+  const positive = parseFloat(pnl) >= 0;
 
   overlay.innerHTML = `
     <div class="modal-box trader-modal-box">
@@ -615,13 +464,13 @@ function showTraderProfile(trade) {
         </div>
         <div>
           <div class="trader-name">${trade.trader}</div>
-          <div class="trader-since">Active trader · Joined 2024</div>
+          <div class="trader-since">Active trader · Polymarket</div>
         </div>
       </div>
       <div class="trader-stats-grid">
         <div class="detail-stat">
           <div class="stat-label">Total P&L</div>
-          <div class="stat-value ${pnlPositive ? 'green' : 'red'}">${pnlPositive ? '+' : ''}$${pnl}</div>
+          <div class="stat-value ${positive ? "green" : "red"}">${positive ? "+" : ""}$${pnl}</div>
         </div>
         <div class="detail-stat">
           <div class="stat-label">Win Rate</div>
@@ -629,7 +478,7 @@ function showTraderProfile(trade) {
         </div>
         <div class="detail-stat">
           <div class="stat-label">Total Trades</div>
-          <div class="stat-value">${totalTrades}</div>
+          <div class="stat-value">${total}</div>
         </div>
         <div class="detail-stat">
           <div class="stat-label">Platform</div>
@@ -642,9 +491,9 @@ function showTraderProfile(trade) {
           <div class="trade-avatar-placeholder" style="background:linear-gradient(135deg,${trade.color},${trade.color}99)">${trade.avatarText}</div>
           <div class="trade-content">
             <div class="trade-action">
-              <span class="${trade.action === 'bought' ? 'buy' : 'sell'}">${trade.action}</span>
+              <span class="${trade.action === "bought" ? "buy" : "sell"}">${trade.action}</span>
               ${trade.shares} shares
-              <span class="${trade.side === 'Yes' ? 'yes-tag' : 'no-tag'}">${trade.side}</span>
+              <span class="${trade.side === "Yes" ? "yes-tag" : "no-tag"}">${trade.side}</span>
               at ${trade.price} (${trade.amount})
             </div>
             <div class="trade-market">${trade.market}</div>
@@ -654,23 +503,55 @@ function showTraderProfile(trade) {
       </div>
     </div>
   `;
-
   overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
-  document.getElementById("close-trader").addEventListener("click", () => overlay.remove());
+  overlay.querySelector("#close-trader").addEventListener("click", () => overlay.remove());
 }
 
-// ===== Toast 通知 =====
+// ===== 大額警報 =====
+let lastWhaleAlertId = null;
+
+function triggerWhaleAlert(trade) {
+  const alertId = `${trade.trader}-${trade.amount}-${trade.time}`;
+  if (lastWhaleAlertId === alertId) return;
+  lastWhaleAlertId = alertId;
+
+  const existing = document.getElementById("whale-alert");
+  if (existing) existing.remove();
+
+  const alert = document.createElement("div");
+  alert.id = "whale-alert";
+  alert.className = "whale-alert";
+  alert.innerHTML = `
+    <div class="whale-alert-icon">🐳</div>
+    <div class="whale-alert-content">
+      <div class="whale-alert-title">大額交易警報</div>
+      <div class="whale-alert-body">
+        <strong>${trade.trader}</strong> ${trade.action}
+        <span class="${trade.side === "Yes" ? "yes-tag" : "no-tag"}">${trade.side}</span>
+        <strong>${trade.amount}</strong>
+      </div>
+      <div class="whale-alert-market">${trade.market}</div>
+    </div>
+    <button class="whale-alert-close" onclick="this.parentElement.remove()">✕</button>
+  `;
+  document.body.appendChild(alert);
+  requestAnimationFrame(() => alert.classList.add("whale-alert-show"));
+  setTimeout(() => {
+    alert.classList.remove("whale-alert-show");
+    setTimeout(() => alert.remove(), 500);
+  }, 6000);
+}
+
+// ===== Toast =====
 function showToast(message) {
   const existing = document.getElementById("toast");
   if (existing) existing.remove();
-
   const toast = document.createElement("div");
   toast.id = "toast";
   toast.className = "toast";
   toast.textContent = message;
   document.body.appendChild(toast);
-
   requestAnimationFrame(() => toast.classList.add("toast-show"));
   setTimeout(() => {
     toast.classList.remove("toast-show");
@@ -680,89 +561,97 @@ function showToast(message) {
 
 // ===== 免責聲明 Modal =====
 function initModal() {
-  const modal = document.getElementById("disclaimer-modal");
+  const modal     = document.getElementById("disclaimer-modal");
   const acceptBtn = document.getElementById("modal-accept");
   const declineBtn = document.getElementById("modal-decline");
-
-  const accepted = sessionStorage.getItem("disclaimer-accepted");
-  if (accepted) {
+  if (sessionStorage.getItem("disclaimer-accepted")) {
     modal.classList.add("hidden");
     return;
   }
-
   acceptBtn.addEventListener("click", () => {
     sessionStorage.setItem("disclaimer-accepted", "true");
     modal.classList.add("hidden");
   });
-
   declineBtn.addEventListener("click", () => {
-    window.history.back();
-    setTimeout(() => {
-      window.location.href = "https://www.google.com";
-    }, 300);
+    setTimeout(() => { window.location.href = "https://www.google.com"; }, 300);
   });
 }
 
-// ===== 模擬即時交易更新 =====
-function simulateLiveTrades() {
-  const newTraders = [
-    { trader: "Brave-Horizon", avatarText: "BH", color: "#3b82f6" },
-    { trader: "Quiet-Thunder", avatarText: "QT", color: "#f97316" },
-    { trader: "Silver-Cascade", avatarText: "SC", color: "#a855f7" },
-    { trader: "Iron-Compass", avatarText: "IC", color: "#14b8a6" },
-  ];
+// ===== 備用模擬資料（API 失敗時使用）=====
+const FALLBACK_MARKETS = [
+  { question: "Will Bitcoin reach $100,000 before April 2025?", outcomePrices: ["0.62","0.38"], volume24hr: 4200000, liquidity: 18500000, endDate: "2025-04-30T00:00:00Z", image: "https://polymarket-upload.s3.us-east-2.amazonaws.com/BTC+fullsize.png" },
+  { question: "Will the Federal Reserve cut interest rates in Q1 2025?", outcomePrices: ["0.34","0.66"], volume24hr: 2100000, liquidity: 9800000, endDate: "2025-03-31T00:00:00Z", image: "" },
+  { question: "Will Ethereum ETF daily net inflows exceed $500M in March?", outcomePrices: ["0.48","0.52"], volume24hr: 3700000, liquidity: 14200000, endDate: "2025-03-31T00:00:00Z", image: "https://polymarket-upload.s3.us-east-2.amazonaws.com/ETH+fullsize.jpg" },
+];
 
-  const markets = [
-    "Bitcoin Up or Down - March 11, 4:20AM-4:25AM ET",
-    "Ethereum Up or Down - March 11, 4:20AM-4:25AM ET",
+// ===== 備用模擬交易（API 失敗時）=====
+function simulateLiveTrades() {
+  const traders = [
+    { name: "Brave-Horizon",    initials: "BH", color: "#3b82f6" },
+    { name: "Quiet-Thunder",    initials: "QT", color: "#f97316" },
+    { name: "Silver-Cascade",   initials: "SC", color: "#a855f7" },
+    { name: "Iron-Compass",     initials: "IC", color: "#14b8a6" },
+  ];
+  const mkts = [
+    "Bitcoin Up or Down - 4:20AM-4:25AM ET",
+    "Ethereum Up or Down - 4:20AM-4:25AM ET",
     "Will BTC exceed $90,000 this week?",
   ];
-
   setInterval(() => {
-    const t = newTraders[Math.floor(Math.random() * newTraders.length)];
-    const side = Math.random() > 0.5 ? "Yes" : "No";
-    const action = Math.random() > 0.3 ? "bought" : "sold";
-    const shares = (Math.random() * 200 + 1).toFixed(2);
-    const price = side === "Yes"
-      ? (Math.random() * 50 + 2).toFixed(1)
-      : (Math.random() * 50 + 50).toFixed(1);
-    const amount = (parseFloat(shares) * parseFloat(price) / 100).toFixed(2);
+    const t       = traders[Math.floor(Math.random() * traders.length)];
+    const side    = Math.random() > 0.5 ? "Yes" : "No";
+    const action  = Math.random() > 0.3 ? "bought" : "sold";
+    const isWhale = Math.random() < 0.2;
+    const shares  = isWhale ? (Math.random() * 50000 + 5000).toFixed(2) : (Math.random() * 200 + 1).toFixed(2);
+    const price   = (Math.random() * 80 + 10) / 100;
+    const amount  = parseFloat(shares) * price;
 
-    const newTrade = {
-      trader: t.trader,
-      avatarText: t.avatarText,
-      action,
-      shares,
-      side,
-      market: markets[Math.floor(Math.random() * markets.length)],
-      price: `${price}¢`,
-      amount: `$${amount}`,
-      time: "just now",
-      color: t.color,
+    const trade = {
+      trader: t.name, avatarText: t.initials, action, shares,
+      side, market: mkts[Math.floor(Math.random() * mkts.length)],
+      price: (price * 100).toFixed(1) + "¢",
+      amount: "$" + amount.toFixed(2),
+      time: "just now", color: t.color,
     };
 
-    TRADES_DATA.unshift(newTrade);
-    if (TRADES_DATA.length > 12) TRADES_DATA.pop();
-
-    // Update times
-    TRADES_DATA.forEach((tr, i) => {
-      if (i === 0) tr.time = "just now";
-      else if (i <= 2) tr.time = `${i} min ago`;
-      else tr.time = `${i} min ago`;
-    });
-
-    renderTrades(TRADES_DATA);
+    const container = document.getElementById("trades-list");
+    const item = document.createElement("div");
+    item.className = "trade-item" + (amount >= WHALE_THRESHOLD ? " trade-whale" : "");
+    const actionClass = action === "bought" ? "buy" : "sell";
+    const sideClass   = side === "Yes" ? "yes-tag" : "no-tag";
+    item.innerHTML = `
+      ${amount >= WHALE_THRESHOLD ? `<div class="whale-bar"></div>` : ""}
+      <div class="trade-avatar-placeholder" style="background:linear-gradient(135deg,${t.color},${t.color}99)">${t.initials}</div>
+      <div class="trade-content">
+        <div class="trade-trader">
+          ${amount >= WHALE_THRESHOLD ? `<span class="whale-badge">🐳 WHALE</span>` : ""}
+          ${t.name}
+        </div>
+        <div class="trade-action">
+          <span class="${actionClass}">${action}</span>
+          ${shares} shares <span class="${sideClass}">${side}</span>
+          at ${(price * 100).toFixed(1)}¢
+          <span class="${amount >= WHALE_THRESHOLD ? "whale-amount" : ""}">($${amount.toFixed(2)})</span>
+        </div>
+        <div class="trade-market">${trade.market}</div>
+        <div class="trade-time">just now</div>
+      </div>
+      <div class="trade-arrow">›</div>
+    `;
+    item.addEventListener("click", () => showTraderProfile(trade));
+    if (container.firstChild) container.insertBefore(item, container.firstChild);
+    else container.appendChild(item);
+    while (container.children.length > 12) container.removeChild(container.lastChild);
+    if (amount >= WHALE_THRESHOLD) triggerWhaleAlert({ ...trade, avatarText: t.initials });
   }, 4000);
 }
 
 // ===== 初始化 =====
 document.addEventListener("DOMContentLoaded", () => {
   initModal();
-  renderMarkets(MARKETS_DATA);
-  renderTrades(TRADES_DATA);
   renderNews(NEWS_DATA);
-  initTabs();
+  loadAll();
+  initTabsWithApi();
   initFilters();
-  initPlatformChips();
-  simulateLiveTrades();
+  startTradePolling();
 });
