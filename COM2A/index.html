@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chance - Prediction Markets</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- 免責聲明 Modal -->
+  <div id="disclaimer-modal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="16" fill="#6366f1"/>
+          <text x="16" y="21" text-anchor="middle" fill="white" font-size="14" font-weight="bold">C</text>
+        </svg>
+      </div>
+      <h2>Geographic Eligibility Disclaimer</h2>
+      <p>I hereby declare and confirm that I am not located in, accessing from, or a resident of any country or region where prediction markets are prohibited, restricted, or otherwise unlawful under applicable local, national, or international laws and regulations.</p>
+      <a href="#" class="modal-link">Restricted locations list ↗</a>
+      <div class="modal-actions">
+        <button id="modal-accept" class="btn-accept">Yes, Enter</button>
+        <button id="modal-decline" class="btn-decline">No, Take Me Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 頂部導覽列 -->
+  <header class="navbar">
+    <div class="navbar-inner">
+      <a href="#" class="logo">
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="16" fill="#6366f1"/>
+          <text x="16" y="21" text-anchor="middle" fill="white" font-size="14" font-weight="bold">C</text>
+        </svg>
+        <span>Chance</span>
+      </a>
+
+      <nav class="nav-links">
+        <a href="#" class="nav-item active">Events</a>
+        <a href="#" class="nav-item">Markets</a>
+      </nav>
+
+      <div class="nav-right">
+        <button class="btn-flag">🇺🇸</button>
+        <button class="btn-login">Log In</button>
+        <button class="btn-watchlist">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+          Watchlist
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Beta 公告欄 -->
+  <div class="beta-banner">
+    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+    </svg>
+    Welcome to Chance! This is an early beta — we ship updates every day. For support, contact us on
+    <a href="https://t.me/ChanceIntern" target="_blank">Telegram ↗</a>
+  </div>
+
+  <!-- 主要內容 -->
+  <main class="main-content">
+    <div class="content-grid">
+
+      <!-- 左側主區域 -->
+      <div class="feed-area">
+
+        <!-- 平台 Logo 列 -->
+        <div class="platforms-row">
+          <div class="platform-chip active">
+            <img src="https://app.chance.cc/_next/image?url=%2Flogos%2Fkalshi.jpeg&w=64&q=75" alt="Kalshi" onerror="this.style.display='none'"/>
+            <span>Kalshi</span>
+          </div>
+          <div class="platform-chip">
+            <img src="https://app.chance.cc/_next/image?url=%2Flogos%2Fpolymarket.jpeg&w=64&q=75" alt="Polymarket" onerror="this.style.display='none'"/>
+            <span>Polymarket</span>
+          </div>
+          <div class="platform-chip">
+            <img src="https://app.chance.cc/_next/image?url=%2Flogos%2Fopinionlabs.png&w=64&q=75" alt="Opinion" onerror="this.style.display='none'"/>
+            <span>Opinion</span>
+          </div>
+          <div class="platform-chip">
+            <img src="https://app.chance.cc/_next/image?url=%2Flogos%2Fpredict.png&w=64&q=75" alt="Predict" onerror="this.style.display='none'"/>
+            <span>Predict</span>
+          </div>
+          <div class="platform-chip">
+            <img src="https://app.chance.cc/_next/image?url=%2Flogos%2Flimitless.png&w=64&q=75" alt="Limitless" onerror="this.style.display='none'"/>
+            <span>Limitless</span>
+          </div>
+        </div>
+
+        <!-- 分類標籤 -->
+        <div class="category-tabs">
+          <button class="tab active" data-tab="all">All</button>
+          <button class="tab" data-tab="live-crypto">
+            <span class="live-dot"></span>Live Crypto
+          </button>
+          <button class="tab" data-tab="crypto">Crypto</button>
+          <button class="tab" data-tab="sports">Sports</button>
+          <button class="tab new-badge" data-tab="more">
+            <span class="badge">NEW</span>More
+          </button>
+        </div>
+
+        <!-- 篩選列 -->
+        <div class="filters-row">
+          <span class="filter-label">Filters</span>
+          <button class="filter-btn active">Smart Flow (24h)</button>
+          <button class="filter-btn">24h Volume</button>
+          <button class="filter-btn">Open Interest</button>
+          <button class="filter-btn">Total Markets</button>
+        </div>
+
+        <!-- 市場列表 -->
+        <div class="markets-list" id="markets-list">
+          <!-- 由 JS 填充 -->
+        </div>
+      </div>
+
+      <!-- 右側側邊欄 -->
+      <aside class="sidebar">
+
+        <!-- 最近交易 -->
+        <div class="sidebar-card">
+          <h3 class="card-title">Recent Trades</h3>
+          <div class="trades-list" id="trades-list">
+            <!-- 由 JS 填充 -->
+          </div>
+        </div>
+
+        <!-- 新聞 -->
+        <div class="sidebar-card">
+          <div class="news-header">
+            <h3 class="card-title">News</h3>
+            <button class="news-scope active">Global</button>
+          </div>
+          <div class="news-list" id="news-list">
+            <!-- 由 JS 填充 -->
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
