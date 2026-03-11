@@ -93,15 +93,18 @@ async function fetchMarkets() {
 
 // ===== 取得最近交易 =====
 async function fetchTrades() {
-  // 嘗試兩個端點
   const endpoints = [
     `${DATA_API}/activity?limit=30`,
+    `${DATA_API}/activity?limit=30&offset=0`,
     `${GAMMA_API}/trades?limit=30`,
+    `${GAMMA_API}/trades?limit=30&order=createdAt&ascending=false`,
   ];
   for (const url of endpoints) {
     try {
       const data = await apiFetch(url);
       if (Array.isArray(data) && data.length > 0) return data;
+      // 有些端點回傳 { data: [...] }
+      if (data && Array.isArray(data.data) && data.data.length > 0) return data.data;
     } catch (_) {}
   }
   throw new Error("Trades fetch failed");
@@ -292,6 +295,7 @@ async function loadAll() {
 
   try {
     const trades = await fetchTrades();
+    console.log("Trades API response:", trades);
     if (trades && trades.length > 0) {
       renderTrades(trades);
     }
