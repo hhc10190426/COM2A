@@ -4,24 +4,31 @@ const DATA_API  = "https://data-api.polymarket.com";
 const CORS_PROXY = "https://corsproxy.io/?";
 const WHALE_THRESHOLD = 5000;
 
+// ===== 帶超時的 fetch（5 秒）=====
+function fetchWithTimeout(url, ms = 5000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
+
 // ===== 支援多個 CORS Proxy 的 fetch =====
 const PROXY_LIST = [
   (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
   (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-  (u) => `https://thingproxy.freeboard.io/fetch/${u}`,
 ];
 
 async function apiFetch(url) {
   // 先嘗試直接請求
   try {
-    const res = await fetch(url, { mode: "cors" });
+    const res = await fetchWithTimeout(url, 5000);
     if (res.ok) return res.json();
   } catch (_) {}
 
   // 逐一嘗試備用 Proxy
   for (const makeProxy of PROXY_LIST) {
     try {
-      const res = await fetch(makeProxy(url));
+      const res = await fetchWithTimeout(makeProxy(url), 6000);
       if (res.ok) {
         const text = await res.text();
         return JSON.parse(text);
@@ -266,18 +273,30 @@ function renderNews(news) {
 
 // ===== 主要載入流程 =====
 async function loadAll() {
+  // 先立即顯示備用資料，讓頁面不空白
+  renderMarkets(FALLBACK_MARKETS);
+  simulateLiveTrades();
   setApiStatus("loading", "連接中...");
+
+  // 背景嘗試取得真實資料
   try {
-    const [markets, trades] = await Promise.all([fetchMarkets(), fetchTrades()]);
-    setApiStatus("live", "即時數據 · Polymarket");
-    renderMarkets(markets);
-    renderTrades(trades);
+    const markets = await fetchMarkets();
+    if (markets && markets.length > 0) {
+      renderMarkets(markets);
+      setApiStatus("live", "即時數據 · Polymarket");
+    }
   } catch (err) {
-    console.warn("API error:", err);
-    setApiStatus("error", "連線失敗，顯示模擬數據");
-    renderMarkets(FALLBACK_MARKETS);
-    renderTrades([]);
-    simulateLiveTrades();
+    console.warn("Markets API failed:", err);
+    setApiStatus("error", "顯示備用數據");
+  }
+
+  try {
+    const trades = await fetchTrades();
+    if (trades && trades.length > 0) {
+      renderTrades(trades);
+    }
+  } catch (err) {
+    console.warn("Trades API failed:", err);
   }
 }
 
