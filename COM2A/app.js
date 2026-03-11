@@ -4,39 +4,81 @@ const DATA_API  = "https://data-api.polymarket.com";
 const CORS_PROXY = "https://corsproxy.io/?";
 const WHALE_THRESHOLD = 5000;
 
-// ===== 帶超時的 fetch（5 秒）=====
-function fetchWithTimeout(url, ms = 5000) {
+// ===== 帶超時的 fetch =====
+function fetchWithTimeout(url, ms = 6000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   return fetch(url, { signal: controller.signal })
     .finally(() => clearTimeout(timer));
 }
 
-// ===== 支援多個 CORS Proxy 的 fetch =====
+// ===== localStorage 快取（5 分鐘）=====
+const CACHE_TTL = 5 * 60 * 1000;
+
+function cacheGet(key) {
+  try {
+    const item = JSON.parse(localStorage.getItem("pm_" + key) || "null");
+    if (item && Date.now() - item.ts < CACHE_TTL) return item.data;
+  } catch (_) {}
+  return null;
+}
+
+function cacheSet(key, data) {
+  try {
+    localStorage.setItem("pm_" + key, JSON.stringify({ ts: Date.now(), data }));
+  } catch (_) {}
+}
+
+// ===== 並行多 Proxy，用最快回應的 =====
 const PROXY_LIST = [
   (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
   (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
 ];
 
-async function apiFetch(url) {
-  // 先嘗試直接請求
-  try {
-    const res = await fetchWithTimeout(url, 5000);
-    if (res.ok) return res.json();
-  } catch (_) {}
-
-  // 逐一嘗試備用 Proxy
-  for (const makeProxy of PROXY_LIST) {
-    try {
-      const res = await fetchWithTimeout(makeProxy(url), 6000);
-      if (res.ok) {
-        const text = await res.text();
-        return JSON.parse(text);
-      }
-    } catch (_) {}
+async function apiFetch(url, cacheKey) {
+  // 先查快取
+  if (cacheKey) {
+    const cached = cacheGet(cacheKey);
+    if (cached) return cached;
   }
 
-  throw new Error("All proxies failed");
+  // 先嘗試直接請求
+  try {
+    const res = await fetchWithTimeout(url, 4000);
+    if (res.ok) {
+      const data = await res.json();
+      if (cacheKey) cacheSet(cacheKey, data);
+      return data;
+    }
+  } catch (_) {}
+
+  // 所有 Proxy 並行發出，取最快成功的
+  const data = await new Promise((resolve, reject) => {
+    let done = false;
+    let fails = 0;
+
+    PROXY_LIST.forEach(async (makeProxy) => {
+      try {
+        const res = await fetchWithTimeout(makeProxy(url), 8000);
+        if (res.ok && !done) {
+          const text = await res.text();
+          const parsed = JSON.parse(text);
+          done = true;
+          resolve(parsed);
+        } else {
+          fails++;
+          if (fails === PROXY_LIST.length && !done) reject(new Error("All proxies failed"));
+        }
+      } catch (_) {
+        fails++;
+        if (fails === PROXY_LIST.length && !done) reject(new Error("All proxies failed"));
+      }
+    });
+  });
+
+  if (cacheKey) cacheSet(cacheKey, data);
+  return data;
 }
 
 // ===== API 狀態顯示 =====
@@ -87,15 +129,14 @@ function walletInitials(pseudonym, addr) {
 
 // ===== 取得 Polymarket 市場列表 =====
 async function fetchMarkets() {
-  const url = `${GAMMA_API}/markets?active=true&closed=false&limit=20&order=volume24hr&ascending=false`;
-  return apiFetch(url);
+  const url = `${GAMMA_API}/markets?active=true&closed=false&limit=50&order=volume24hr&ascending=false`;
+  return apiFetch(url, "markets_top50");
 }
 
 // ===== 取得最近交易（Data API /trades，完全公開）=====
 async function fetchTrades() {
-  // 正確端點：/trades（不是 /activity）
   const url = `${DATA_API}/trades?limit=30&takerOnly=true`;
-  const data = await apiFetch(url);
+  const data = await apiFetch(url, "trades_recent");
   if (Array.isArray(data) && data.length > 0) return data;
   throw new Error("Trades empty");
 }
@@ -384,61 +425,38 @@ async function initTabsWithApi() {
 
   const tabs = document.querySelectorAll(".tab");
   tabs.forEach((tab) => {
-    tab.addEventListener("click", async () => {
+    tab.addEventListener("click", () => {
       tabs.forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
       const key = tab.dataset.tab;
 
-      if (key === "all") {
+      if (key === "all" || !TAB_KEYWORDS[key]) {
         renderMarkets(cachedMarkets);
         return;
       }
 
-      // live-crypto 用特定端點
-      if (key === "live-crypto") {
-        try {
-          const data = await apiFetch(`${GAMMA_API}/markets?active=true&closed=false&limit=20&tag=crypto&order=volume24hr&ascending=false`);
-          const filtered = data.filter((m) => TAB_KEYWORDS["live-crypto"].test(m.question || ""));
-          renderMarkets(filtered.length > 0 ? filtered : data);
-        } catch (_) {
-          renderMarkets(cachedMarkets.filter((m) => TAB_KEYWORDS["live-crypto"].test(m.question || "")));
-        }
-        return;
-      }
-
-      // 其他分類用 tag 參數向 API 查詢
-      const tagMap = {
-        trump: "trump", iran: "iran", ucl: "sports",
-        oscars: "culture", crypto: "crypto", sports: "sports",
-        ai: "tech", elections: "politics",
-      };
-      try {
-        const tag = tagMap[key] || key;
-        const data = await apiFetch(`${GAMMA_API}/markets?active=true&closed=false&limit=30&tag=${tag}&order=volume24hr&ascending=false`);
-        const kw = TAB_KEYWORDS[key];
-        const filtered = kw ? data.filter((m) => kw.test(m.question || "")) : data;
-        renderMarkets(filtered.length > 0 ? filtered : data);
-      } catch (_) {
-        const kw = TAB_KEYWORDS[key];
-        renderMarkets(kw ? cachedMarkets.filter((m) => kw.test(m.question || "")) : cachedMarkets);
-      }
+      // 用快取資料做關鍵字過濾，不重新呼叫 API
+      const kw = TAB_KEYWORDS[key];
+      const filtered = cachedMarkets.filter((m) => kw.test(m.question || ""));
+      renderMarkets(filtered.length > 0 ? filtered : cachedMarkets);
     });
   });
 }
 
-// ===== 篩選排序 =====
+// ===== 篩選排序（用快取資料排序，不重打 API）=====
 function initFilters() {
   const filterBtns = document.querySelectorAll(".filter-btn");
   filterBtns.forEach((btn) => {
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", () => {
       filterBtns.forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       const order = btn.dataset.order || "volume24hr";
-      try {
-        const markets = await apiFetch(`${GAMMA_API}/markets?active=true&closed=false&limit=20&order=${order}`);
-        renderMarkets(markets);
-        cachedMarkets = markets;
-      } catch (_) {}
+      const sorted = [...cachedMarkets].sort((a, b) => {
+        if (order === "liquidity") return (parseFloat(b.liquidity) || 0) - (parseFloat(a.liquidity) || 0);
+        if (order === "endDate")   return new Date(a.endDate) - new Date(b.endDate);
+        return (parseFloat(b.volume24hr) || 0) - (parseFloat(a.volume24hr) || 0);
+      });
+      renderMarkets(sorted);
     });
   });
 }
