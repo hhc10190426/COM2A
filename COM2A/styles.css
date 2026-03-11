@@ -290,8 +290,13 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   display: flex;
   gap: 4px;
   margin-bottom: 16px;
-  flex-wrap: wrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 4px;
+  flex-wrap: nowrap;
 }
+.category-tabs::-webkit-scrollbar { display: none; }
 
 .tab {
   display: flex;

@@ -129,8 +129,8 @@ function walletInitials(pseudonym, addr) {
 
 // ===== 取得 Polymarket 市場列表 =====
 async function fetchMarkets() {
-  const url = `${GAMMA_API}/markets?active=true&closed=false&limit=50&order=volume24hr&ascending=false`;
-  return apiFetch(url, "markets_top50");
+  const url = `${GAMMA_API}/markets?active=true&closed=false&limit=100&order=volume24hr&ascending=false`;
+  return apiFetch(url, "markets_top100");
 }
 
 // ===== 取得最近交易（Data API /trades，完全公開）=====
@@ -401,16 +401,22 @@ function startTradePolling() {
 
 // ===== 分類關鍵字對應 Polymarket Topics =====
 const TAB_KEYWORDS = {
-  "all":         null,
-  "live-crypto": /bitcoin.*up.*down|btc.*up.*down|eth.*up.*down|ethereum.*up.*down/i,
-  "trump":       /trump/i,
-  "iran":        /iran/i,
-  "ucl":         /champions league|ucl|uefa/i,
-  "oscars":      /oscar|academy award/i,
-  "crypto":      /bitcoin|ethereum|btc|eth|solana|sol|crypto|xrp|doge/i,
-  "sports":      /nba|nfl|epl|premier league|soccer|football|basketball|tennis|ufc|sport|champions|world cup|fifa/i,
-  "ai":          /ai|artificial intelligence|openai|gpt|claude|gemini/i,
-  "elections":   /election|president|senator|governor|nominee|primary|vote|congress/i,
+  "all":          null,
+  "live-crypto":  /bitcoin.*up.*down|btc.*up.*down|eth.*up.*down|ethereum.*up.*down|\bup or down\b/i,
+  "politics":     /election|president|senator|governor|congress|parliament|prime minister|fed |federal reserve|trump|biden|vote|tariff|cabinet|ceasefire/i,
+  "trump":        /trump/i,
+  "middle-east":  /iran|israel|hamas|hezbollah|gaza|hormuz|middle east|lebanese|beirut|saudi|uae/i,
+  "iran":         /iran/i,
+  "crypto":       /bitcoin|ethereum|btc|eth|solana|sol|crypto|xrp|doge|bnb|coinbase|binance/i,
+  "sports":       /nba|nfl|nhl|mlb|epl|premier league|soccer|football|basketball|tennis|ufc|mma|champions league|world cup|fifa|super bowl|championship|league winner/i,
+  "ucl":          /champions league|ucl|uefa/i,
+  "oscars":       /oscar|academy award|best picture|best actor|best actress|best director/i,
+  "pop-culture":  /oscar|grammy|emmy|nfl|super bowl|taylor swift|beyonce|netflix|box office|movie|film|music|celebrity|kardashian/i,
+  "tech":         /spacex|tesla|apple|google|amazon|microsoft|meta|nvidia|ipo|stock|nasdaq|s&p|starship|launch/i,
+  "ai":           /\bai\b|artificial intelligence|openai|gpt|claude|gemini|llm|chatgpt|deepseek|anthropic|mistral/i,
+  "elections":    /election|nominee|primary|vote|ballot|polling|midterm|gubernatorial/i,
+  "finance":      /federal reserve|fed |interest rate|inflation|cpi|gdp|recession|nasdaq|s&p|dow|treasury|bond|yield/i,
+  "elon":         /elon|musk|doge|tesla|spacex|twitter|x\.com|tweets/i,
 };
 
 // ===== 市場篩選（用 API 資料）=====
@@ -438,7 +444,12 @@ async function initTabsWithApi() {
       // 用快取資料做關鍵字過濾，不重新呼叫 API
       const kw = TAB_KEYWORDS[key];
       const filtered = cachedMarkets.filter((m) => kw.test(m.question || ""));
-      renderMarkets(filtered.length > 0 ? filtered : cachedMarkets);
+      if (filtered.length === 0) {
+        document.getElementById("markets-list").innerHTML =
+          `<div class="empty-state">No markets found for this category.<br><span style="font-size:12px;color:var(--text-muted)">Try switching to "All" to see all markets.</span></div>`;
+      } else {
+        renderMarkets(filtered);
+      }
     });
   });
 }
