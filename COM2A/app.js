@@ -1,7 +1,22 @@
 // ===== Polymarket API 設定 =====
 const GAMMA_API = "https://gamma-api.polymarket.com";
 const DATA_API  = "https://data-api.polymarket.com";
+const CORS_PROXY = "https://corsproxy.io/?";
 const WHALE_THRESHOLD = 5000;
+
+// ===== 支援 CORS Proxy 的 fetch =====
+async function apiFetch(url) {
+  // 先嘗試直接請求
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (res.ok) return res.json();
+  } catch (_) {}
+
+  // 若 CORS 被擋，改用 proxy
+  const proxied = await fetch(CORS_PROXY + encodeURIComponent(url));
+  if (!proxied.ok) throw new Error(`HTTP ${proxied.status}`);
+  return proxied.json();
+}
 
 // ===== API 狀態顯示 =====
 function setApiStatus(state, text) {
@@ -52,17 +67,13 @@ function walletInitials(pseudonym, addr) {
 // ===== 取得 Polymarket 市場列表 =====
 async function fetchMarkets() {
   const url = `${GAMMA_API}/markets?active=true&closed=false&limit=20&order=volume24hr&ascending=false`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Markets API ${res.status}`);
-  return res.json();
+  return apiFetch(url);
 }
 
 // ===== 取得最近交易 =====
 async function fetchTrades() {
   const url = `${DATA_API}/activity?limit=30`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Activity API ${res.status}`);
-  return res.json();
+  return apiFetch(url);
 }
 
 // ===== 渲染市場列表 =====
@@ -299,7 +310,7 @@ function initFilters() {
       if (text.includes("Open Interest")) order = "liquidity";
       if (text.includes("Total Markets"))  order = "volume";
       try {
-        const markets = await fetch(`${GAMMA_API}/markets?active=true&closed=false&limit=20&order=${order}&ascending=false`).then(r => r.json());
+        const markets = await apiFetch(`${GAMMA_API}/markets?active=true&closed=false&limit=20&order=${order}&ascending=false`);
         renderMarkets(markets);
       } catch (_) {}
     });
