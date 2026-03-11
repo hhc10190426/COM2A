@@ -91,9 +91,64 @@ async function fetchMarkets() {
   return apiFetch(url);
 }
 
-// ===== 取得最近交易（Polymarket 交易 API 需要驗證，使用真實市場名稱模擬）=====
+// ===== 取得最近交易（Data API /trades，完全公開）=====
 async function fetchTrades() {
-  throw new Error("Trades API requires auth");
+  // 正確端點：/trades（不是 /activity）
+  const url = `${DATA_API}/trades?limit=30&takerOnly=true`;
+  const data = await apiFetch(url);
+  if (Array.isArray(data) && data.length > 0) return data;
+  throw new Error("Trades empty");
+}
+
+// ===== 取得市場價格歷史（CLOB API）=====
+async function fetchPriceHistory(tokenId, interval = "1w") {
+  const url = `https://clob.polymarket.com/prices-history?market=${tokenId}&interval=${interval}&fidelity=60`;
+  return apiFetch(url);
+}
+
+// ===== 產生 SVG 價格走勢圖 =====
+function renderSparkline(history, width = 400, height = 80) {
+  if (!history || history.length < 2) return "";
+  const prices = history.map((h) => h.p);
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const range = max - min || 0.01;
+  const points = prices.map((p, i) => {
+    const x = (i / (prices.length - 1)) * width;
+    const y = height - ((p - min) / range) * (height - 8) - 4;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const lastPrice = prices[prices.length - 1];
+  const firstPrice = prices[0];
+  const isUp = lastPrice >= firstPrice;
+  const color = isUp ? "#22c55e" : "#ef4444";
+  const fillColor = isUp ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)";
+  const lastX = parseFloat(points[points.length - 1].split(",")[0]);
+  const lastY = parseFloat(points[points.length - 1].split(",")[1]);
+
+  return `
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <polyline
+        points="${points.join(" ")}"
+        fill="none"
+        stroke="${color}"
+        stroke-width="2"
+        stroke-linejoin="round"
+        stroke-linecap="round"
+      />
+      <polygon
+        points="${points.join(" ")} ${width},${height} 0,${height}"
+        fill="url(#chartFill)"
+      />
+      <circle cx="${lastX}" cy="${lastY}" r="3.5" fill="${color}"/>
+    </svg>
+  `;
 }
 
 // ===== 渲染市場列表 =====
@@ -388,10 +443,16 @@ function initFilters() {
   });
 }
 
-// ===== 市場詳情 Modal（API 版）=====
-function openMarketDetailFromApi(m, yesPct, noPct, vol24h, oi, endDate, icon) {
+// ===== 市場詳情 Modal（含價格走勢圖 + Polymarket 連結）=====
+async function openMarketDetailFromApi(m, yesPct, noPct, vol24h, oi, endDate, icon) {
   const existing = document.getElementById("market-detail-modal");
   if (existing) existing.remove();
+
+  // Polymarket 頁面連結
+  const slug = m.slug || m.eventSlug || "";
+  const polyUrl = slug
+    ? `https://polymarket.com/event/${slug}`
+    : `https://polymarket.com/`;
 
   const overlay = document.createElement("div");
   overlay.id = "market-detail-modal";
@@ -407,6 +468,7 @@ function openMarketDetailFromApi(m, yesPct, noPct, vol24h, oi, endDate, icon) {
         </div>
         <button class="modal-close" id="close-detail">✕</button>
       </div>
+
       <div class="detail-price-row">
         <div class="detail-price yes-price">
           <div class="price-label">YES</div>
@@ -420,10 +482,28 @@ function openMarketDetailFromApi(m, yesPct, noPct, vol24h, oi, endDate, icon) {
           <div class="price-sub">per share</div>
         </div>
       </div>
+
       <div class="yes-no-bar" style="height:8px;margin:0">
         <div class="bar-yes" style="width:${yesPct}%"></div>
         <div class="bar-no"  style="width:${noPct}%"></div>
       </div>
+
+      <!-- 價格走勢圖 -->
+      <div class="chart-section">
+        <div class="chart-header">
+          <span class="stat-label">YES Price · 7 Days</span>
+          <div class="chart-intervals" id="chart-intervals">
+            <button class="interval-btn active" data-interval="1w">1W</button>
+            <button class="interval-btn" data-interval="1d">1D</button>
+            <button class="interval-btn" data-interval="6h">6H</button>
+            <button class="interval-btn" data-interval="max">Max</button>
+          </div>
+        </div>
+        <div class="chart-wrap" id="chart-wrap">
+          <div class="chart-loading">載入走勢圖...</div>
+        </div>
+      </div>
+
       <div class="detail-stats-grid">
         <div class="detail-stat">
           <div class="stat-label">24h Volume</div>
@@ -442,6 +522,7 @@ function openMarketDetailFromApi(m, yesPct, noPct, vol24h, oi, endDate, icon) {
           <div class="stat-value accent">Polymarket</div>
         </div>
       </div>
+
       <div class="detail-trade-row">
         <button class="btn-trade yes-btn full" onclick="openBuyModal(event,'${(m.question||'').replace(/'/g,"\\'")}','Yes',${yesPct})">
           Buy YES — ${yesPct}¢
@@ -450,12 +531,69 @@ function openMarketDetailFromApi(m, yesPct, noPct, vol24h, oi, endDate, icon) {
           Buy NO — ${noPct}¢
         </button>
       </div>
-      ${m.url ? `<a href="${m.url}" target="_blank" class="modal-link" style="text-align:center;display:block">在 Polymarket 查看 ↗</a>` : ""}
+
+      <a href="${polyUrl}" target="_blank" class="btn-polymarket-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+          <polyline points="15 3 21 3 21 9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        在 Polymarket 查看此市場
+      </a>
     </div>
   `;
+
   overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
   overlay.querySelector("#close-detail").addEventListener("click", () => overlay.remove());
+
+  // 取得 tokenId（YES token）
+  const tokenIds = m.clobTokenIds
+    ? (Array.isArray(m.clobTokenIds) ? m.clobTokenIds : JSON.parse(m.clobTokenIds))
+    : [];
+  const tokenId = tokenIds[0] || "";
+
+  // 載入價格走勢圖
+  const chartWrap = overlay.querySelector("#chart-wrap");
+  const loadChart = async (interval) => {
+    chartWrap.innerHTML = `<div class="chart-loading">載入中...</div>`;
+    if (!tokenId) {
+      chartWrap.innerHTML = `<div class="chart-loading">無價格數據</div>`;
+      return;
+    }
+    try {
+      const result = await fetchPriceHistory(tokenId, interval);
+      const history = result?.history || [];
+      if (history.length < 2) {
+        chartWrap.innerHTML = `<div class="chart-loading">數據不足</div>`;
+        return;
+      }
+      const lastPrice = history[history.length - 1].p;
+      const firstPrice = history[0].p;
+      const change = ((lastPrice - firstPrice) * 100).toFixed(1);
+      const isUp = lastPrice >= firstPrice;
+      chartWrap.innerHTML = `
+        <div class="chart-price-info">
+          <span class="chart-current">${(lastPrice * 100).toFixed(1)}¢</span>
+          <span class="chart-change ${isUp ? 'green' : 'red'}">${isUp ? '▲' : '▼'} ${Math.abs(change)}%</span>
+        </div>
+        ${renderSparkline(history, 480, 90)}
+      `;
+    } catch (_) {
+      chartWrap.innerHTML = `<div class="chart-loading">走勢圖載入失敗</div>`;
+    }
+  };
+
+  loadChart("1w");
+
+  // 切換時間區間
+  overlay.querySelector("#chart-intervals").addEventListener("click", (e) => {
+    const btn = e.target.closest(".interval-btn");
+    if (!btn) return;
+    overlay.querySelectorAll(".interval-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    loadChart(btn.dataset.interval);
+  });
 }
 
 // ===== 下單 Modal =====

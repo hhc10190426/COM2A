@@ -910,6 +910,103 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   gap: 12px;
 }
 
+/* ===== Price Chart ===== */
+.chart-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chart-intervals {
+  display: flex;
+  gap: 4px;
+}
+
+.interval-btn {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: none;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.interval-btn:hover { color: var(--text-primary); background: var(--bg-chip); }
+.interval-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(99,102,241,0.1); }
+
+.chart-wrap {
+  padding: 4px 8px 8px;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.chart-wrap svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.chart-loading {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 24px;
+}
+
+.chart-price-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 0;
+}
+
+.chart-current {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.chart-change {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ===== Polymarket Link Button ===== */
+.btn-polymarket-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(99,102,241,0.08);
+  border: 1px solid rgba(99,102,241,0.25);
+  border-radius: 10px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+.btn-polymarket-link:hover {
+  background: rgba(99,102,241,0.15);
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}
+
 /* ===== Trade Modal ===== */
 .trade-modal-box {
   max-width: 420px;
