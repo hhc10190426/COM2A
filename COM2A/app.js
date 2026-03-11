@@ -91,25 +91,9 @@ async function fetchMarkets() {
   return apiFetch(url);
 }
 
-// ===== 取得最近交易 =====
+// ===== 取得最近交易（Polymarket 交易 API 需要驗證，使用真實市場名稱模擬）=====
 async function fetchTrades() {
-  const endpoints = [
-    `${DATA_API}/activity`,
-    `${DATA_API}/activity?size=20`,
-    `https://clob.polymarket.com/trades?limit=20`,
-  ];
-  for (const url of endpoints) {
-    try {
-      const data = await apiFetch(url);
-      console.log("Trades success from:", url, data);
-      if (Array.isArray(data) && data.length > 0) return data;
-      if (data && Array.isArray(data.data) && data.data.length > 0) return data.data;
-      if (data && Array.isArray(data.results) && data.results.length > 0) return data.results;
-    } catch (e) {
-      console.warn("Trades endpoint failed:", url, e.message);
-    }
-  }
-  throw new Error("All trades endpoints failed");
+  throw new Error("Trades API requires auth");
 }
 
 // ===== 渲染市場列表 =====
@@ -289,9 +273,13 @@ async function loadAll() {
     if (markets && markets.length > 0) {
       renderMarkets(markets);
       setApiStatus("live", "即時數據 · Polymarket");
+      // 用真實市場名稱更新模擬交易
+      liveMarketNames = markets
+        .slice(0, 10)
+        .map((m) => m.question)
+        .filter(Boolean);
     }
   } catch (err) {
-    console.warn("Markets API failed:", err);
     setApiStatus("error", "顯示備用數據");
   }
 
@@ -315,6 +303,20 @@ function startTradePolling() {
   }, 15000);
 }
 
+// ===== 分類關鍵字對應 Polymarket Topics =====
+const TAB_KEYWORDS = {
+  "all":         null,
+  "live-crypto": /bitcoin.*up.*down|btc.*up.*down|eth.*up.*down|ethereum.*up.*down/i,
+  "trump":       /trump/i,
+  "iran":        /iran/i,
+  "ucl":         /champions league|ucl|uefa/i,
+  "oscars":      /oscar|academy award/i,
+  "crypto":      /bitcoin|ethereum|btc|eth|solana|sol|crypto|xrp|doge/i,
+  "sports":      /nba|nfl|epl|premier league|soccer|football|basketball|tennis|ufc|sport|champions|world cup|fifa/i,
+  "ai":          /ai|artificial intelligence|openai|gpt|claude|gemini/i,
+  "elections":   /election|president|senator|governor|nominee|primary|vote|congress/i,
+};
+
 // ===== 市場篩選（用 API 資料）=====
 let cachedMarkets = [];
 
@@ -327,21 +329,44 @@ async function initTabsWithApi() {
 
   const tabs = document.querySelectorAll(".tab");
   tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
+    tab.addEventListener("click", async () => {
       tabs.forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
       const key = tab.dataset.tab;
-      let filtered = cachedMarkets;
-      if (key === "crypto" || key === "live-crypto") {
-        filtered = cachedMarkets.filter((m) =>
-          /bitcoin|ethereum|btc|eth|crypto|solana|sol/i.test(m.question || "")
-        );
-      } else if (key === "sports") {
-        filtered = cachedMarkets.filter((m) =>
-          /nba|nfl|soccer|football|basketball|tennis|ufc|sport/i.test(m.question || "")
-        );
+
+      if (key === "all") {
+        renderMarkets(cachedMarkets);
+        return;
       }
-      renderMarkets(filtered);
+
+      // live-crypto 用特定端點
+      if (key === "live-crypto") {
+        try {
+          const data = await apiFetch(`${GAMMA_API}/markets?active=true&closed=false&limit=20&tag=crypto&order=volume24hr&ascending=false`);
+          const filtered = data.filter((m) => TAB_KEYWORDS["live-crypto"].test(m.question || ""));
+          renderMarkets(filtered.length > 0 ? filtered : data);
+        } catch (_) {
+          renderMarkets(cachedMarkets.filter((m) => TAB_KEYWORDS["live-crypto"].test(m.question || "")));
+        }
+        return;
+      }
+
+      // 其他分類用 tag 參數向 API 查詢
+      const tagMap = {
+        trump: "trump", iran: "iran", ucl: "sports",
+        oscars: "culture", crypto: "crypto", sports: "sports",
+        ai: "tech", elections: "politics",
+      };
+      try {
+        const tag = tagMap[key] || key;
+        const data = await apiFetch(`${GAMMA_API}/markets?active=true&closed=false&limit=30&tag=${tag}&order=volume24hr&ascending=false`);
+        const kw = TAB_KEYWORDS[key];
+        const filtered = kw ? data.filter((m) => kw.test(m.question || "")) : data;
+        renderMarkets(filtered.length > 0 ? filtered : data);
+      } catch (_) {
+        const kw = TAB_KEYWORDS[key];
+        renderMarkets(kw ? cachedMarkets.filter((m) => kw.test(m.question || "")) : cachedMarkets);
+      }
     });
   });
 }
@@ -353,13 +378,11 @@ function initFilters() {
     btn.addEventListener("click", async () => {
       filterBtns.forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-      const text = btn.textContent.trim();
-      let order = "volume24hr";
-      if (text.includes("Open Interest")) order = "liquidity";
-      if (text.includes("Total Markets"))  order = "volume";
+      const order = btn.dataset.order || "volume24hr";
       try {
-        const markets = await apiFetch(`${GAMMA_API}/markets?active=true&closed=false&limit=20&order=${order}&ascending=false`);
+        const markets = await apiFetch(`${GAMMA_API}/markets?active=true&closed=false&limit=20&order=${order}`);
         renderMarkets(markets);
+        cachedMarkets = markets;
       } catch (_) {}
     });
   });
@@ -643,19 +666,25 @@ const FALLBACK_MARKETS = [
   { question: "Will Ethereum ETF daily net inflows exceed $500M in March?", outcomePrices: ["0.48","0.52"], volume24hr: 3700000, liquidity: 14200000, endDate: "2025-03-31T00:00:00Z", image: "https://polymarket-upload.s3.us-east-2.amazonaws.com/ETH+fullsize.jpg" },
 ];
 
-// ===== 備用模擬交易（API 失敗時）=====
+// 儲存從 API 抓到的真實市場名稱
+let liveMarketNames = [
+  "Will Bitcoin reach $100,000 before April 2025?",
+  "Will Ethereum ETF daily net inflows exceed $500M?",
+  "Will the Federal Reserve cut rates in Q1 2025?",
+];
+
+// ===== 模擬交易（使用真實市場名稱）=====
 function simulateLiveTrades() {
   const traders = [
     { name: "Brave-Horizon",    initials: "BH", color: "#3b82f6" },
     { name: "Quiet-Thunder",    initials: "QT", color: "#f97316" },
     { name: "Silver-Cascade",   initials: "SC", color: "#a855f7" },
     { name: "Iron-Compass",     initials: "IC", color: "#14b8a6" },
+    { name: "Lucky-Tide",       initials: "LT", color: "#ec4899" },
+    { name: "Swift-Oracle",     initials: "SO", color: "#22c55e" },
   ];
-  const mkts = [
-    "Bitcoin Up or Down - 4:20AM-4:25AM ET",
-    "Ethereum Up or Down - 4:20AM-4:25AM ET",
-    "Will BTC exceed $90,000 this week?",
-  ];
+  // mkts 會隨著真實市場資料更新
+  const mkts = liveMarketNames;
   setInterval(() => {
     const t       = traders[Math.floor(Math.random() * traders.length)];
     const side    = Math.random() > 0.5 ? "Yes" : "No";
