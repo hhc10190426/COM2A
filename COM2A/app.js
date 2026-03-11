@@ -94,20 +94,22 @@ async function fetchMarkets() {
 // ===== 取得最近交易 =====
 async function fetchTrades() {
   const endpoints = [
-    `${DATA_API}/activity?limit=30`,
-    `${DATA_API}/activity?limit=30&offset=0`,
-    `${GAMMA_API}/trades?limit=30`,
-    `${GAMMA_API}/trades?limit=30&order=createdAt&ascending=false`,
+    `${DATA_API}/activity`,
+    `${DATA_API}/activity?size=20`,
+    `https://clob.polymarket.com/trades?limit=20`,
   ];
   for (const url of endpoints) {
     try {
       const data = await apiFetch(url);
+      console.log("Trades success from:", url, data);
       if (Array.isArray(data) && data.length > 0) return data;
-      // 有些端點回傳 { data: [...] }
       if (data && Array.isArray(data.data) && data.data.length > 0) return data.data;
-    } catch (_) {}
+      if (data && Array.isArray(data.results) && data.results.length > 0) return data.results;
+    } catch (e) {
+      console.warn("Trades endpoint failed:", url, e.message);
+    }
   }
-  throw new Error("Trades fetch failed");
+  throw new Error("All trades endpoints failed");
 }
 
 // ===== 渲染市場列表 =====
@@ -295,7 +297,6 @@ async function loadAll() {
 
   try {
     const trades = await fetchTrades();
-    console.log("Trades API response:", trades);
     if (trades && trades.length > 0) {
       renderTrades(trades);
     }
