@@ -4,7 +4,13 @@ const DATA_API  = "https://data-api.polymarket.com";
 const CORS_PROXY = "https://corsproxy.io/?";
 const WHALE_THRESHOLD = 5000;
 
-// ===== 支援 CORS Proxy 的 fetch =====
+// ===== 支援多個 CORS Proxy 的 fetch =====
+const PROXY_LIST = [
+  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  (u) => `https://thingproxy.freeboard.io/fetch/${u}`,
+];
+
 async function apiFetch(url) {
   // 先嘗試直接請求
   try {
@@ -12,10 +18,18 @@ async function apiFetch(url) {
     if (res.ok) return res.json();
   } catch (_) {}
 
-  // 若 CORS 被擋，改用 proxy
-  const proxied = await fetch(CORS_PROXY + encodeURIComponent(url));
-  if (!proxied.ok) throw new Error(`HTTP ${proxied.status}`);
-  return proxied.json();
+  // 逐一嘗試備用 Proxy
+  for (const makeProxy of PROXY_LIST) {
+    try {
+      const res = await fetch(makeProxy(url));
+      if (res.ok) {
+        const text = await res.text();
+        return JSON.parse(text);
+      }
+    } catch (_) {}
+  }
+
+  throw new Error("All proxies failed");
 }
 
 // ===== API 狀態顯示 =====
@@ -72,8 +86,18 @@ async function fetchMarkets() {
 
 // ===== 取得最近交易 =====
 async function fetchTrades() {
-  const url = `${DATA_API}/activity?limit=30`;
-  return apiFetch(url);
+  // 嘗試兩個端點
+  const endpoints = [
+    `${DATA_API}/activity?limit=30`,
+    `${GAMMA_API}/trades?limit=30`,
+  ];
+  for (const url of endpoints) {
+    try {
+      const data = await apiFetch(url);
+      if (Array.isArray(data) && data.length > 0) return data;
+    } catch (_) {}
+  }
+  throw new Error("Trades fetch failed");
 }
 
 // ===== 渲染市場列表 =====
