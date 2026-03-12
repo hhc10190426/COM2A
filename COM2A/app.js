@@ -141,6 +141,12 @@ async function fetchTrades() {
   throw new Error("Trades empty");
 }
 
+// ===== 取得事件（包含所有選項）=====
+async function fetchEvent(eventId) {
+  const url = `${GAMMA_API}/events/${eventId}`;
+  return apiFetch(url, `event_${eventId}`);
+}
+
 // ===== 取得市場價格歷史（CLOB API）=====
 async function fetchPriceHistory(tokenId, interval = "1w") {
   const url = `https://clob.polymarket.com/prices-history?market=${tokenId}&interval=${interval}&fidelity=60`;
@@ -472,8 +478,182 @@ function initFilters() {
   });
 }
 
-// ===== 市場詳情 Modal（含價格走勢圖 + Polymarket 連結）=====
+// ===== 市場詳情 Modal 入口：判斷單選or多選 =====
 async function openMarketDetailFromApi(m, yesPct, noPct, vol24h, oi, endDate, icon) {
+  // 嘗試抓同一 event 的所有選項
+  const eventId = m.eventId || m.event_id;
+  if (eventId) {
+    try {
+      const event = await fetchEvent(eventId);
+      const markets = event?.markets || event?.data?.markets || [];
+      if (markets.length > 1) {
+        openEventDetailModal(event, markets, m, vol24h, oi, endDate, icon);
+        return;
+      }
+    } catch (_) {}
+  }
+  // 二元市場（Yes / No）
+  openBinaryDetailModal(m, yesPct, noPct, vol24h, oi, endDate, icon);
+}
+
+// ===== 多選項 Event Modal =====
+async function openEventDetailModal(event, markets, currentMarket, vol24h, oi, endDate, icon) {
+  const existing = document.getElementById("market-detail-modal");
+  if (existing) existing.remove();
+
+  const title    = event.title || currentMarket.question;
+  const slug     = event.slug  || currentMarket.slug || "";
+  const polyUrl  = slug ? `https://polymarket.com/event/${slug}` : "https://polymarket.com/";
+
+  // 整理每個選項
+  const outcomes = markets.map((mk) => {
+    const yesPrice  = Array.isArray(mk.outcomePrices)
+      ? parseFloat(mk.outcomePrices[0]) : 0.5;
+    const label     = mk.groupItemTitle || mk.outcomes?.[0] || mk.question;
+    const tokenIds  = mk.clobTokenIds
+      ? (Array.isArray(mk.clobTokenIds) ? mk.clobTokenIds : JSON.parse(mk.clobTokenIds))
+      : [];
+    return {
+      label,
+      price:   yesPrice,
+      pct:     Math.round(yesPrice * 100),
+      tokenId: tokenIds[0] || "",
+      mk,
+    };
+  }).sort((a, b) => b.price - a.price);
+
+  const outcomeRows = outcomes.map((o) => `
+    <div class="outcome-row" data-token="${o.tokenId}">
+      <div class="outcome-info">
+        <span class="outcome-label">${o.label}</span>
+        <div class="outcome-bar-wrap">
+          <div class="outcome-bar" style="width:${o.pct}%"></div>
+        </div>
+      </div>
+      <div class="outcome-right">
+        <span class="outcome-price ${o.pct >= 50 ? 'green' : o.pct <= 10 ? 'red' : ''}">${o.pct}¢</span>
+        <button class="btn-trade yes-btn outcome-buy-btn"
+          onclick="event.stopPropagation(); openBuyModal(event, '${(o.label).replace(/'/g,"\\'")}', 'Yes', ${o.pct})">
+          Buy
+        </button>
+      </div>
+    </div>
+  `).join("");
+
+  const overlay = document.createElement("div");
+  overlay.id    = "market-detail-modal";
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal-box detail-modal event-modal">
+      <div class="detail-header">
+        <img src="${icon}" class="detail-icon" onerror="this.style.display='none'"/>
+        <div class="detail-title-wrap">
+          <span class="platform-tag">Polymarket</span>
+          <h2 class="detail-title">${title}</h2>
+          <span class="detail-end">Ends ${endDate}</span>
+        </div>
+        <button class="modal-close" id="close-detail">✕</button>
+      </div>
+
+      <div class="event-stats-row">
+        <div class="event-stat"><span class="stat-label">24h Volume</span><span class="stat-value">${vol24h}</span></div>
+        <div class="event-stat"><span class="stat-label">Liquidity</span><span class="stat-value">${oi}</span></div>
+        <div class="event-stat"><span class="stat-label">Outcomes</span><span class="stat-value accent">${outcomes.length}</span></div>
+      </div>
+
+      <div class="outcomes-list" id="outcomes-list">
+        ${outcomeRows}
+      </div>
+
+      <!-- 價格走勢圖（點選項切換）-->
+      <div class="chart-section" id="chart-section" style="display:${outcomes[0]?.tokenId ? 'block' : 'none'}">
+        <div class="chart-header">
+          <span class="stat-label" id="chart-label">${outcomes[0]?.label} · YES Price · 7 Days</span>
+          <div class="chart-intervals" id="chart-intervals">
+            <button class="interval-btn active" data-interval="1w">1W</button>
+            <button class="interval-btn" data-interval="1d">1D</button>
+            <button class="interval-btn" data-interval="6h">6H</button>
+            <button class="interval-btn" data-interval="max">Max</button>
+          </div>
+        </div>
+        <div class="chart-wrap" id="chart-wrap">
+          <div class="chart-loading">載入走勢圖...</div>
+        </div>
+      </div>
+
+      <a href="${polyUrl}" target="_blank" class="btn-polymarket-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+          <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        在 Polymarket 查看此市場
+      </a>
+    </div>
+  `;
+
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  overlay.querySelector("#close-detail").addEventListener("click", () => overlay.remove());
+
+  // 點選項高亮 + 換走勢圖
+  let selectedTokenId = outcomes[0]?.tokenId || "";
+  let selectedLabel   = outcomes[0]?.label   || "";
+  let currentInterval = "1w";
+
+  const chartWrap  = overlay.querySelector("#chart-wrap");
+  const chartLabel = overlay.querySelector("#chart-label");
+
+  const loadChart = async (tokenId, label, interval) => {
+    if (!tokenId) return;
+    chartWrap.innerHTML = `<div class="chart-loading">載入中...</div>`;
+    chartLabel.textContent = `${label} · YES Price · ${interval.toUpperCase()}`;
+    try {
+      const result  = await fetchPriceHistory(tokenId, interval);
+      const history = result?.history || [];
+      if (history.length < 2) { chartWrap.innerHTML = `<div class="chart-loading">數據不足</div>`; return; }
+      const lastP   = history[history.length - 1].p;
+      const firstP  = history[0].p;
+      const change  = ((lastP - firstP) * 100).toFixed(1);
+      const isUp    = lastP >= firstP;
+      chartWrap.innerHTML = `
+        <div class="chart-price-info">
+          <span class="chart-current">${(lastP * 100).toFixed(1)}¢</span>
+          <span class="chart-change ${isUp ? 'green' : 'red'}">${isUp ? '▲' : '▼'} ${Math.abs(change)}%</span>
+        </div>
+        ${renderSparkline(history, 480, 90)}
+      `;
+    } catch (_) { chartWrap.innerHTML = `<div class="chart-loading">走勢圖載入失敗</div>`; }
+  };
+
+  if (selectedTokenId) loadChart(selectedTokenId, selectedLabel, currentInterval);
+
+  // 點選項切換走勢圖
+  overlay.querySelector("#outcomes-list").addEventListener("click", (e) => {
+    const row = e.target.closest(".outcome-row");
+    if (!row || e.target.closest(".outcome-buy-btn")) return;
+    overlay.querySelectorAll(".outcome-row").forEach(r => r.classList.remove("selected"));
+    row.classList.add("selected");
+    selectedTokenId = row.dataset.token;
+    selectedLabel   = row.querySelector(".outcome-label").textContent;
+    loadChart(selectedTokenId, selectedLabel, currentInterval);
+  });
+
+  // 切換時間區間
+  overlay.querySelector("#chart-intervals").addEventListener("click", (e) => {
+    const btn = e.target.closest(".interval-btn");
+    if (!btn) return;
+    overlay.querySelectorAll(".interval-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentInterval = btn.dataset.interval;
+    loadChart(selectedTokenId, selectedLabel, currentInterval);
+  });
+
+  // 預設高亮第一個
+  overlay.querySelector(".outcome-row")?.classList.add("selected");
+}
+
+// ===== 二元市場詳情 Modal（Yes/No）=====
+async function openBinaryDetailModal(m, yesPct, noPct, vol24h, oi, endDate, icon) {
   const existing = document.getElementById("market-detail-modal");
   if (existing) existing.remove();
 
