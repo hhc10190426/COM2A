@@ -89,24 +89,9 @@
           </div>
         </div>
 
-        <!-- 分類標籤 -->
-        <div class="category-tabs">
-          <button class="tab active" data-tab="all">All</button>
-          <button class="tab" data-tab="live-crypto"><span class="live-dot"></span>Live Crypto</button>
-          <button class="tab" data-tab="politics">Politics</button>
-          <button class="tab" data-tab="trump">Trump</button>
-          <button class="tab" data-tab="middle-east">Middle East</button>
-          <button class="tab" data-tab="iran">Iran</button>
-          <button class="tab" data-tab="crypto">Crypto</button>
-          <button class="tab" data-tab="sports">Sports</button>
-          <button class="tab" data-tab="ucl">UCL</button>
-          <button class="tab" data-tab="oscars">Oscars</button>
-          <button class="tab" data-tab="pop-culture">Pop Culture</button>
-          <button class="tab" data-tab="tech">Tech</button>
-          <button class="tab" data-tab="ai">AI</button>
-          <button class="tab" data-tab="elections">Elections</button>
-          <button class="tab" data-tab="finance">Finance</button>
-          <button class="tab" data-tab="elon">Elon</button>
+        <!-- 分類標籤（由 JS 動態生成）-->
+        <div class="category-tabs" id="category-tabs">
+          <button class="tab active" data-tag-id="all">All</button>
         </div>
 
         <!-- 篩選列 -->
@@ -149,6 +134,6 @@
     </div>
   </main>
 
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

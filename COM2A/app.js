@@ -246,8 +246,8 @@ function renderMarkets(events) {
 // ===== 多選項事件卡片（接受完整 event 物件）=====
 function renderEventCard(card, ev) {
   const markets = [...(ev.markets || [])].sort((a, b) => {
-    const pa = parseFloat((a.outcomePrices || ["0"])[0]);
-    const pb = parseFloat((b.outcomePrices || ["0"])[0]);
+    const pa = parseOutcomePrices(a.outcomePrices)[0];
+    const pb = parseOutcomePrices(b.outcomePrices)[0];
     return pb - pa;
   });
 
@@ -263,8 +263,9 @@ function renderEventCard(card, ev) {
   const extra   = markets.length - 4;
 
   const outcomeRows = preview.map((m) => {
-    const pct   = Math.round(parseFloat((m.outcomePrices || ["0.5"])[0]) * 100);
-    const label = m.groupItemTitle || m.outcomes?.[0] || m.question || "—";
+    const prices = parseOutcomePrices(m.outcomePrices);
+    const pct    = Math.round(prices[0] * 100);
+    const label  = m.groupItemTitle || m.outcomes?.[0] || m.question || "—";
     return `
       <div class="event-preview-row">
         <span class="event-preview-label">${label}</span>
@@ -306,8 +307,7 @@ function renderEventCard(card, ev) {
 
 // ===== 單一 Yes/No 市場卡片 =====
 function renderBinaryCard(card, m, parentEvent) {
-  const yesPriceRaw = Array.isArray(m.outcomePrices)
-    ? parseFloat(m.outcomePrices[0]) : 0.5;
+  const yesPriceRaw = parseOutcomePrices(m.outcomePrices)[0];
   const yesPct  = Math.round(yesPriceRaw * 100);
   const noPct   = 100 - yesPct;
   const vol24h  = fmtUSD(parseFloat(parentEvent?.volume24hr || m.volume24hr) || 0);
@@ -494,67 +494,65 @@ function startTradePolling() {
   }, 15000);
 }
 
-// ===== 分類關鍵字對應 Polymarket Topics =====
-const TAB_KEYWORDS = {
-  "all":          null,
-  "live-crypto":  /bitcoin.*up.*down|btc.*up.*down|eth.*up.*down|ethereum.*up.*down|\bup or down\b/i,
-  "politics":     /election|president|senator|governor|congress|parliament|prime minister|fed |federal reserve|trump|biden|vote|tariff|cabinet|ceasefire/i,
-  "trump":        /trump/i,
-  "middle-east":  /iran|israel|hamas|hezbollah|gaza|hormuz|middle east|lebanese|beirut|saudi|uae/i,
-  "iran":         /iran/i,
-  "crypto":       /bitcoin|ethereum|btc|eth|solana|sol|crypto|xrp|doge|bnb|coinbase|binance/i,
-  "sports":       /nba|nfl|nhl|mlb|epl|premier league|soccer|football|basketball|tennis|ufc|mma|champions league|world cup|fifa|super bowl|championship|league winner/i,
-  "ucl":          /champions league|ucl|uefa/i,
-  "oscars":       /oscar|academy award|best picture|best actor|best actress|best director/i,
-  "pop-culture":  /oscar|grammy|emmy|nfl|super bowl|taylor swift|beyonce|netflix|box office|movie|film|music|celebrity|kardashian/i,
-  "tech":         /spacex|tesla|apple|google|amazon|microsoft|meta|nvidia|ipo|stock|nasdaq|s&p|starship|launch/i,
-  "ai":           /\bai\b|artificial intelligence|openai|gpt|claude|gemini|llm|chatgpt|deepseek|anthropic|mistral/i,
-  "elections":    /election|nominee|primary|vote|ballot|polling|midterm|gubernatorial/i,
-  "finance":      /federal reserve|fed |interest rate|inflation|cpi|gdp|recession|nasdaq|s&p|dow|treasury|bond|yield/i,
-  "elon":         /elon|musk|doge|tesla|spacex|twitter|x\.com|tweets/i,
-};
-
 // ===== 全域快取（Events + 平坦 Markets）=====
 let cachedEvents  = [];
-let cachedMarkets = []; // flat list，用於 Recent Trades 市場名稱
+let cachedMarkets = [];
+let activeTagId   = "all"; // 目前選中的 tag id
 
-function eventMatchesKeyword(ev, kw) {
-  if (kw.test(ev.title || "")) return true;
-  return (ev.markets || []).some((m) => kw.test(m.question || ""));
+// ===== 解析 outcomePrices（可能是 string 或 array）=====
+function parseOutcomePrices(raw) {
+  if (Array.isArray(raw)) return raw.map(Number);
+  if (typeof raw === "string") {
+    try { return JSON.parse(raw).map(Number); } catch (_) {}
+  }
+  return [0.5, 0.5];
 }
 
-async function initTabsWithApi() {
-  try {
-    cachedEvents = await fetchEvents();
-  } catch (_) {
-    // fallback：把舊版模擬市場包成 events 格式
-    cachedEvents = FALLBACK_MARKETS.map((m) => ({ ...m, markets: [m] }));
-  }
-
-  // 更新 flat markets（供 Recent Trades 使用市場名稱）
-  cachedMarkets = cachedEvents.flatMap((ev) => ev.markets || [ev]);
-  liveMarketNames = cachedEvents.map((ev) => ev.title || ev.markets?.[0]?.question || "").filter(Boolean);
-
-  // 初始渲染（全部）
-  renderMarkets(cachedEvents);
-
-  const tabs = document.querySelectorAll(".tab");
-  tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      tabs.forEach((t) => t.classList.remove("active"));
-      tab.classList.add("active");
-      const key = tab.dataset.tab;
-
-      if (key === "all" || !TAB_KEYWORDS[key]) {
-        renderMarkets(cachedEvents);
-        return;
+// ===== 從 events 提取所有 tags，按出現次數排序 =====
+function extractTags(events) {
+  const tagMap = new Map(); // id → { id, label, count }
+  events.forEach((ev) => {
+    (ev.tags || []).forEach((t) => {
+      if (!t.id || !t.label) return;
+      if (tagMap.has(t.id)) {
+        tagMap.get(t.id).count++;
+      } else {
+        tagMap.set(t.id, { id: String(t.id), label: t.label, slug: t.slug || "", count: 1 });
       }
+    });
+  });
+  return [...tagMap.values()].sort((a, b) => b.count - a.count);
+}
 
-      const kw = TAB_KEYWORDS[key];
-      const filtered = cachedEvents.filter((ev) => eventMatchesKeyword(ev, kw));
+// ===== 動態生成分類 Tabs =====
+function buildTabs(events) {
+  const container = document.getElementById("category-tabs");
+  if (!container) return;
+
+  const tags = extractTags(events);
+
+  // 清除舊的（保留 All）
+  container.innerHTML = `<button class="tab active" data-tag-id="all">All</button>`;
+
+  tags.forEach((t) => {
+    const btn = document.createElement("button");
+    btn.className  = "tab";
+    btn.dataset.tagId = t.id;
+    btn.textContent   = t.label;
+    container.appendChild(btn);
+  });
+
+  // 掛點擊事件
+  container.querySelectorAll(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      container.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      activeTagId = tab.dataset.tagId || "all";
+
+      const filtered = filterEventsByTag(cachedEvents, activeTagId);
       if (filtered.length === 0) {
         document.getElementById("markets-list").innerHTML =
-          `<div class="empty-state">No markets found for this category.<br><span style="font-size:12px;color:var(--text-muted)">Try switching to "All" to see all markets.</span></div>`;
+          `<div class="empty-state">No markets found for this category.</div>`;
       } else {
         renderMarkets(filtered);
       }
@@ -562,7 +560,29 @@ async function initTabsWithApi() {
   });
 }
 
-// ===== 篩選排序（用 events 資料排序）=====
+// ===== 依 tagId 過濾 events =====
+function filterEventsByTag(events, tagId) {
+  if (tagId === "all") return events;
+  return events.filter((ev) =>
+    (ev.tags || []).some((t) => String(t.id) === tagId || t.slug === tagId)
+  );
+}
+
+async function initTabsWithApi() {
+  try {
+    cachedEvents = await fetchEvents();
+  } catch (_) {
+    cachedEvents = FALLBACK_MARKETS.map((m) => ({ ...m, markets: [m] }));
+  }
+
+  cachedMarkets  = cachedEvents.flatMap((ev) => ev.markets || [ev]);
+  liveMarketNames = cachedEvents.map((ev) => ev.title || ev.markets?.[0]?.question || "").filter(Boolean);
+
+  buildTabs(cachedEvents);
+  renderMarkets(cachedEvents);
+}
+
+// ===== 篩選排序 =====
 function initFilters() {
   const filterBtns = document.querySelectorAll(".filter-btn");
   filterBtns.forEach((btn) => {
@@ -571,15 +591,7 @@ function initFilters() {
       btn.classList.add("active");
       const order = btn.dataset.order || "volume24hr";
 
-      // 取目前正在顯示的分類下過濾後的 events
-      const activeTab = document.querySelector(".tab.active");
-      const key = activeTab?.dataset?.tab || "all";
-      let base = cachedEvents;
-      if (key !== "all" && TAB_KEYWORDS[key]) {
-        const kw = TAB_KEYWORDS[key];
-        base = cachedEvents.filter((ev) => eventMatchesKeyword(ev, kw));
-      }
-
+      const base   = filterEventsByTag(cachedEvents, activeTagId);
       const sorted = [...base].sort((a, b) => {
         if (order === "liquidity") return (parseFloat(b.liquidity) || 0) - (parseFloat(a.liquidity) || 0);
         if (order === "endDate")   return new Date(a.endDate || 0) - new Date(b.endDate || 0);
@@ -607,8 +619,7 @@ async function openEventDetailModal(event, markets, currentMarket, vol24h, oi, e
 
   // 整理每個選項
   const outcomes = markets.map((mk) => {
-    const yesPrice  = Array.isArray(mk.outcomePrices)
-      ? parseFloat(mk.outcomePrices[0]) : 0.5;
+    const yesPrice  = parseOutcomePrices(mk.outcomePrices)[0];
     const label     = mk.groupItemTitle || mk.outcomes?.[0] || mk.question;
     const tokenIds  = mk.clobTokenIds
       ? (Array.isArray(mk.clobTokenIds) ? mk.clobTokenIds : JSON.parse(mk.clobTokenIds))
