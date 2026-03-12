@@ -476,22 +476,29 @@ function renderNews(news) {
   });
 }
 
-// ===== 主要載入流程 =====
+// ===== 主要載入流程（唯一負責 fetch events 的地方）=====
 async function loadAll() {
   // 先立即顯示備用資料，讓頁面不空白
-  renderMarkets(FALLBACK_MARKETS.map((m) => ({ ...m, markets: [m] })));
+  const fallback = FALLBACK_MARKETS.map((m) => ({ ...m, markets: [m] }));
+  cachedEvents  = fallback;
+  cachedMarkets = FALLBACK_MARKETS;
+  renderMarkets(fallback);
+  buildTabs(fallback);       // 先建立只有 All 的 tab
   simulateLiveTrades();
   setApiStatus("loading", "連接中...");
 
-  // 背景嘗試取得真實事件資料
+  // 嘗試取得真實事件資料
   try {
     const events = await fetchEvents();
     if (events && events.length > 0) {
       cachedEvents  = events;
       cachedMarkets = events.flatMap((ev) => ev.markets || [ev]);
-      liveMarketNames = events.slice(0, 10).map((ev) => ev.title || ev.markets?.[0]?.question || "").filter(Boolean);
+      liveMarketNames = events.slice(0, 10)
+        .map((ev) => ev.title || ev.markets?.[0]?.question || "")
+        .filter(Boolean);
       computeTrending(events);
       updateStatsBar(events);
+      buildTabs(events);     // 重建含所有 tag 的 tabs
       renderMarkets(events);
       setApiStatus("live", "即時數據 · Polymarket");
     }
@@ -499,14 +506,11 @@ async function loadAll() {
     setApiStatus("error", "顯示備用數據");
   }
 
+  // 交易資料（獨立，不影響主流程）
   try {
     const trades = await fetchTrades();
-    if (trades && trades.length > 0) {
-      renderTrades(trades);
-    }
-  } catch (err) {
-    console.warn("Trades API failed:", err);
-  }
+    if (trades && trades.length > 0) renderTrades(trades);
+  } catch (_) {}
 }
 
 // ===== 定期更新交易（每 15 秒）=====
@@ -586,20 +590,9 @@ function filterEventsByTag(events, tagId) {
   );
 }
 
-async function initTabsWithApi() {
-  try {
-    cachedEvents = await fetchEvents();
-  } catch (_) {
-    cachedEvents = FALLBACK_MARKETS.map((m) => ({ ...m, markets: [m] }));
-  }
-
-  cachedMarkets  = cachedEvents.flatMap((ev) => ev.markets || [ev]);
-  liveMarketNames = cachedEvents.map((ev) => ev.title || ev.markets?.[0]?.question || "").filter(Boolean);
-
-  computeTrending(cachedEvents);
-  updateStatsBar(cachedEvents);
-  buildTabs(cachedEvents);
-  renderMarkets(cachedEvents);
+// initTabsWithApi 不再自己 fetch，由 loadAll 統一處理
+function initTabsWithApi() {
+  // Tabs 與市場由 loadAll() 負責建立，這裡是 no-op
 }
 
 // ===== 篩選排序 =====
@@ -1381,12 +1374,11 @@ function computeTrending(events) {
 document.addEventListener("DOMContentLoaded", () => {
   initModal();
   renderNews(NEWS_DATA);
-  loadAll();
-  initTabsWithApi();
-  initFilters();
-  startTradePolling();
+  initFilters();          // 純 DOM 事件，不需要等資料
   initSearch();
   initWatchlistToggle();
   updateWatchlistBadge();
   renderTopTraders();
+  startTradePolling();
+  loadAll();              // 唯一 fetch 入口（含 buildTabs + renderMarkets）
 });
