@@ -198,6 +198,27 @@ function renderSparkline(history, width = 400, height = 80) {
   `;
 }
 
+// ===== 將市場依 eventId 分組 =====
+function groupMarkets(markets) {
+  const eventMap  = new Map();
+  const singles   = [];
+
+  markets.forEach((m) => {
+    const eid = m.eventId;
+    if (eid) {
+      if (!eventMap.has(eid)) eventMap.set(eid, []);
+      eventMap.get(eid).push(m);
+    } else {
+      singles.push(m);
+    }
+  });
+
+  const groups = [];
+  eventMap.forEach((mks) => groups.push({ isEvent: true, markets: mks }));
+  singles.forEach((m)  => groups.push({ isEvent: false, markets: [m] }));
+  return groups;
+}
+
 // ===== 渲染市場列表 =====
 function renderMarkets(markets) {
   const container = document.getElementById("markets-list");
@@ -208,66 +229,143 @@ function renderMarkets(markets) {
     return;
   }
 
-  markets.forEach((m) => {
-    const yesPriceRaw = Array.isArray(m.outcomePrices)
-      ? parseFloat(m.outcomePrices[0])
-      : parseFloat(m.bestAsk ?? 0.5);
-    const yesPct   = Math.round(yesPriceRaw * 100);
-    const noPct    = 100 - yesPct;
-    const vol24h   = fmtUSD(m.volume24hr ?? m.volume24h ?? 0);
-    const oi       = fmtUSD(m.liquidity ?? m.openInterest ?? 0);
-    const endDate  = m.endDate
-      ? new Date(m.endDate).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })
-      : "TBD";
-    const icon     = m.image || m.icon || "";
-    const isYes    = yesPct >= 50;
+  const groups = groupMarkets(markets);
 
+  groups.forEach((group) => {
     const card = document.createElement("div");
     card.className = "market-card";
 
-    card.innerHTML = `
-      <div class="market-header">
-        <img class="market-icon" src="${icon}" alt=""
-          onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22><rect width=%2244%22 height=%2244%22 rx=%2210%22 fill=%22%231e1e2a%22/><text x=%2222%22 y=%2228%22 text-anchor=%22middle%22 fill=%22%236366f1%22 font-size=%2218%22>P</text></svg>'"/>
-        <div class="market-info">
-          <div class="market-question">${m.question}</div>
-          <div class="market-meta">
-            <span class="platform-tag">Polymarket</span>
-            <span class="market-end-date">Ends ${endDate}</span>
-          </div>
-        </div>
-        <div class="stat-item" style="text-align:right;flex-shrink:0">
-          <div class="stat-label">YES</div>
-          <div class="stat-value ${isYes ? "green" : "red"}">${yesPct}¢</div>
-        </div>
-      </div>
-      <div class="yes-no-bar">
-        <div class="bar-yes" style="width:${yesPct}%"></div>
-        <div class="bar-no"  style="width:${noPct}%"></div>
-      </div>
-      <div class="market-stats">
-        <div class="stat-item">
-          <div class="stat-label">24h Volume</div>
-          <div class="stat-value">${vol24h}</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Liquidity</div>
-          <div class="stat-value">${oi}</div>
-        </div>
-      </div>
-      <div class="market-actions">
-        <button class="btn-trade yes-btn" onclick="event.stopPropagation(); openBuyModal(event, ${JSON.stringify(m.question).replace(/"/g,"&quot;")}, 'Yes', ${yesPct})">
-          Buy YES &nbsp;<strong>${yesPct}¢</strong>
-        </button>
-        <button class="btn-trade no-btn" onclick="event.stopPropagation(); openBuyModal(event, ${JSON.stringify(m.question).replace(/"/g,"&quot;")}, 'No', ${noPct})">
-          Buy NO &nbsp;<strong>${noPct}¢</strong>
-        </button>
-      </div>
-    `;
+    if (group.isEvent && group.markets.length > 1) {
+      // ── 多選項事件卡片 ──
+      renderEventCard(card, group.markets);
+    } else {
+      // ── 單一 Yes/No 市場卡片 ──
+      renderBinaryCard(card, group.markets[0]);
+    }
 
-    card.addEventListener("click", () => openMarketDetailFromApi(m, yesPct, noPct, vol24h, oi, endDate, icon));
     container.appendChild(card);
   });
+}
+
+// ===== 多選項事件卡片 =====
+function renderEventCard(card, markets) {
+  // 以 YES 價格排序
+  const sorted = [...markets].sort((a, b) => {
+    const pa = parseFloat((a.outcomePrices || ["0"])[0]);
+    const pb = parseFloat((b.outcomePrices || ["0"])[0]);
+    return pb - pa;
+  });
+
+  const first   = sorted[0];
+  const icon    = first.image || first.icon || "";
+  const title   = first.eventTitle || first.groupItemTitle || first.question;
+  const vol24h  = fmtUSD(markets.reduce((s, m) => s + parseFloat(m.volume24hr || 0), 0));
+  const oi      = fmtUSD(markets.reduce((s, m) => s + parseFloat(m.liquidity  || 0), 0));
+  const endDate = first.endDate
+    ? new Date(first.endDate).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })
+    : "TBD";
+
+  // 顯示前 4 個選項
+  const preview = sorted.slice(0, 4);
+  const extra   = sorted.length - 4;
+
+  const outcomeRows = preview.map((m) => {
+    const pct   = Math.round(parseFloat((m.outcomePrices || ["0.5"])[0]) * 100);
+    const label = m.groupItemTitle || m.outcomes?.[0] || "—";
+    return `
+      <div class="event-preview-row">
+        <span class="event-preview-label">${label}</span>
+        <div class="event-preview-bar-wrap">
+          <div class="event-preview-bar" style="width:${pct}%"></div>
+        </div>
+        <span class="event-preview-pct ${pct >= 50 ? 'green' : ''}">${pct}%</span>
+      </div>
+    `;
+  }).join("");
+
+  card.innerHTML = `
+    <div class="market-header">
+      <img class="market-icon" src="${icon}" alt=""
+        onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22><rect width=%2244%22 height=%2244%22 rx=%2210%22 fill=%22%231e1e2a%22/><text x=%2222%22 y=%2228%22 text-anchor=%22middle%22 fill=%22%236366f1%22 font-size=%2218%22>P</text></svg>'"/>
+      <div class="market-info">
+        <div class="market-question">${title}</div>
+        <div class="market-meta">
+          <span class="platform-tag">Polymarket</span>
+          <span class="market-end-date">Ends ${endDate}</span>
+          <span class="outcomes-count-badge">${markets.length} outcomes</span>
+        </div>
+      </div>
+    </div>
+    <div class="event-preview-outcomes">
+      ${outcomeRows}
+      ${extra > 0 ? `<div class="event-preview-more">+${extra} more outcomes</div>` : ""}
+    </div>
+    <div class="market-stats">
+      <div class="stat-item">
+        <div class="stat-label">24h Volume</div>
+        <div class="stat-value">${vol24h}</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Liquidity</div>
+        <div class="stat-value">${oi}</div>
+      </div>
+    </div>
+  `;
+
+  card.addEventListener("click", () => {
+    openMarketDetailFromApi(first, 0, 0, vol24h, oi, endDate, icon);
+  });
+}
+
+// ===== 單一 Yes/No 市場卡片 =====
+function renderBinaryCard(card, m) {
+  const yesPriceRaw = Array.isArray(m.outcomePrices)
+    ? parseFloat(m.outcomePrices[0]) : 0.5;
+  const yesPct  = Math.round(yesPriceRaw * 100);
+  const noPct   = 100 - yesPct;
+  const vol24h  = fmtUSD(m.volume24hr ?? 0);
+  const oi      = fmtUSD(m.liquidity  ?? 0);
+  const endDate = m.endDate
+    ? new Date(m.endDate).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })
+    : "TBD";
+  const icon    = m.image || m.icon || "";
+  const isYes   = yesPct >= 50;
+
+  card.innerHTML = `
+    <div class="market-header">
+      <img class="market-icon" src="${icon}" alt=""
+        onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22><rect width=%2244%22 height=%2244%22 rx=%2210%22 fill=%22%231e1e2a%22/><text x=%2222%22 y=%2228%22 text-anchor=%22middle%22 fill=%22%236366f1%22 font-size=%2218%22>P</text></svg>'"/>
+      <div class="market-info">
+        <div class="market-question">${m.question}</div>
+        <div class="market-meta">
+          <span class="platform-tag">Polymarket</span>
+          <span class="market-end-date">Ends ${endDate}</span>
+        </div>
+      </div>
+      <div class="stat-item" style="text-align:right;flex-shrink:0">
+        <div class="stat-label">YES</div>
+        <div class="stat-value ${isYes ? "green" : "red"}">${yesPct}¢</div>
+      </div>
+    </div>
+    <div class="yes-no-bar">
+      <div class="bar-yes" style="width:${yesPct}%"></div>
+      <div class="bar-no"  style="width:${noPct}%"></div>
+    </div>
+    <div class="market-stats">
+      <div class="stat-item"><div class="stat-label">24h Volume</div><div class="stat-value">${vol24h}</div></div>
+      <div class="stat-item"><div class="stat-label">Liquidity</div><div class="stat-value">${oi}</div></div>
+    </div>
+    <div class="market-actions">
+      <button class="btn-trade yes-btn" onclick="event.stopPropagation(); openBuyModal(event, ${JSON.stringify(m.question).replace(/"/g,"&quot;")}, 'Yes', ${yesPct})">
+        Buy YES &nbsp;<strong>${yesPct}¢</strong>
+      </button>
+      <button class="btn-trade no-btn" onclick="event.stopPropagation(); openBuyModal(event, ${JSON.stringify(m.question).replace(/"/g,"&quot;")}, 'No', ${noPct})">
+        Buy NO &nbsp;<strong>${noPct}¢</strong>
+      </button>
+    </div>
+  `;
+
+  card.addEventListener("click", () => openMarketDetailFromApi(m, yesPct, noPct, vol24h, oi, endDate, icon));
 }
 
 // ===== 渲染最近交易 =====

@@ -744,6 +744,72 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   background: var(--red);
 }
 
+/* ===== Event Preview Card ===== */
+.outcomes-count-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  background: rgba(99,102,241,0.12);
+  color: var(--accent);
+  border-radius: 20px;
+  border: 1px solid rgba(99,102,241,0.25);
+}
+
+.event-preview-outcomes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.event-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.event-preview-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 100px;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+.event-preview-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-chip);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.event-preview-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.event-preview-pct {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  min-width: 38px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.event-preview-pct.green { color: var(--green); }
+
+.event-preview-more {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding-top: 2px;
+}
+
 /* ===== Market Actions ===== */
 .market-actions {
   display: flex;
