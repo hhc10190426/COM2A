@@ -657,12 +657,26 @@ async function openBinaryDetailModal(m, yesPct, noPct, vol24h, oi, endDate, icon
   const existing = document.getElementById("market-detail-modal");
   if (existing) existing.remove();
 
-  // Polymarket 頁面連結（優先用 eventSlug）
-  const slug = m.eventSlug || m.slug || "";
-  console.log("Market slugs →", { slug: m.slug, eventSlug: m.eventSlug, using: slug });
-  const polyUrl = slug
-    ? `https://polymarket.com/event/${slug}`
-    : `https://polymarket.com/`;
+  // 印出完整市場物件，找出正確的 slug 欄位
+  console.log("Full market object →", JSON.stringify(m, null, 2));
+
+  // 嘗試所有可能的 event slug 欄位
+  const eventSlug = m.eventSlug
+    || m.events?.[0]?.slug
+    || m.event?.slug
+    || m.groupSlug
+    || null;
+  const marketSlug = m.slug || "";
+  const slug = eventSlug || marketSlug;
+
+  console.log("Slug fields →", { eventSlug, marketSlug, using: slug });
+
+  // 嘗試 event 路徑，fallback 到搜尋
+  const polyUrl = eventSlug
+    ? `https://polymarket.com/event/${eventSlug}`
+    : marketSlug
+      ? `https://polymarket.com/event/${marketSlug}`
+      : `https://polymarket.com/`;
 
   const overlay = document.createElement("div");
   overlay.id = "market-detail-modal";
