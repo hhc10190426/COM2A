@@ -127,10 +127,11 @@ function walletInitials(pseudonym, addr) {
   return (addr || "??").slice(2, 4).toUpperCase();
 }
 
-// ===== 取得 Polymarket 市場列表 =====
-async function fetchMarkets() {
-  const url = `${GAMMA_API}/markets?active=true&closed=false&limit=100&order=volume24hr&ascending=false`;
-  return apiFetch(url, "markets_top100");
+// ===== 取得 Polymarket 事件列表（含所有選項）=====
+async function fetchEvents() {
+  const url = `${GAMMA_API}/events?active=true&closed=false&limit=50&order=volume24hr&ascending=false`;
+  const data = await apiFetch(url, "events_top50");
+  return Array.isArray(data) ? data : (data?.data || []);
 }
 
 // ===== 取得最近交易（Data API /trades，完全公開）=====
@@ -143,8 +144,25 @@ async function fetchTrades() {
 
 // ===== 取得事件（包含所有選項）=====
 async function fetchEvent(eventId) {
-  const url = `${GAMMA_API}/events/${eventId}`;
-  return apiFetch(url, `event_${eventId}`);
+  // ① 先嘗試 /events/{id} 拿完整事件
+  try {
+    const ev = await apiFetch(`${GAMMA_API}/events/${eventId}`, `event_${eventId}`);
+    const mks = ev?.markets || ev?.data?.markets || [];
+    if (mks.length > 0) return ev;
+  } catch (_) {}
+
+  // ② 備援：用 eventId 過濾 /markets 拿同事件所有市場
+  const raw = await apiFetch(
+    `${GAMMA_API}/markets?eventId=${eventId}&limit=50&active=true`,
+    `event_markets_${eventId}`
+  );
+  const mks = Array.isArray(raw) ? raw : (raw?.data || []);
+  if (mks.length === 0) throw new Error("Event not found");
+  return {
+    title:   mks[0]?.eventTitle || mks[0]?.groupItemTitle || mks[0]?.question,
+    slug:    mks[0]?.eventSlug  || mks[0]?.slug || "",
+    markets: mks,
+  };
 }
 
 // ===== 取得市場價格歷史（CLOB API）=====
@@ -198,89 +216,63 @@ function renderSparkline(history, width = 400, height = 80) {
   `;
 }
 
-// ===== 將市場依 eventId 分組 =====
-function groupMarkets(markets) {
-  const eventMap  = new Map();
-  const singles   = [];
-
-  markets.forEach((m) => {
-    const eid = m.eventId;
-    if (eid) {
-      if (!eventMap.has(eid)) eventMap.set(eid, []);
-      eventMap.get(eid).push(m);
-    } else {
-      singles.push(m);
-    }
-  });
-
-  const groups = [];
-  eventMap.forEach((mks) => groups.push({ isEvent: true, markets: mks }));
-  singles.forEach((m)  => groups.push({ isEvent: false, markets: [m] }));
-  return groups;
-}
-
-// ===== 渲染市場列表 =====
-function renderMarkets(markets) {
+// ===== 渲染市場列表（接受 events 陣列）=====
+function renderMarkets(events) {
   const container = document.getElementById("markets-list");
   container.innerHTML = "";
 
-  if (!markets || markets.length === 0) {
+  if (!events || events.length === 0) {
     container.innerHTML = `<div class="empty-state">No active markets found.</div>`;
     return;
   }
 
-  const groups = groupMarkets(markets);
-
-  groups.forEach((group) => {
+  events.forEach((ev) => {
     const card = document.createElement("div");
     card.className = "market-card";
+    const markets = ev.markets || [];
 
-    if (group.isEvent && group.markets.length > 1) {
-      // ── 多選項事件卡片 ──
-      renderEventCard(card, group.markets);
+    if (markets.length > 1) {
+      renderEventCard(card, ev);
     } else {
-      // ── 單一 Yes/No 市場卡片 ──
-      renderBinaryCard(card, group.markets[0]);
+      // 單一市場（binary Yes/No）或直接用 event 欄位
+      const m = markets[0] || ev;
+      renderBinaryCard(card, m, ev);
     }
 
     container.appendChild(card);
   });
 }
 
-// ===== 多選項事件卡片 =====
-function renderEventCard(card, markets) {
-  // 以 YES 價格排序
-  const sorted = [...markets].sort((a, b) => {
+// ===== 多選項事件卡片（接受完整 event 物件）=====
+function renderEventCard(card, ev) {
+  const markets = [...(ev.markets || [])].sort((a, b) => {
     const pa = parseFloat((a.outcomePrices || ["0"])[0]);
     const pb = parseFloat((b.outcomePrices || ["0"])[0]);
     return pb - pa;
   });
 
-  const first   = sorted[0];
-  const icon    = first.image || first.icon || "";
-  const title   = first.eventTitle || first.groupItemTitle || first.question;
-  const vol24h  = fmtUSD(markets.reduce((s, m) => s + parseFloat(m.volume24hr || 0), 0));
-  const oi      = fmtUSD(markets.reduce((s, m) => s + parseFloat(m.liquidity  || 0), 0));
-  const endDate = first.endDate
-    ? new Date(first.endDate).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })
+  const icon    = ev.image || ev.icon || markets[0]?.image || "";
+  const title   = ev.title || ev.question || markets[0]?.question || "";
+  const vol24h  = fmtUSD(parseFloat(ev.volume24hr  || 0) || markets.reduce((s, m) => s + parseFloat(m.volume24hr || 0), 0));
+  const oi      = fmtUSD(parseFloat(ev.liquidity   || 0) || markets.reduce((s, m) => s + parseFloat(m.liquidity  || 0), 0));
+  const endDate = (ev.endDate || markets[0]?.endDate)
+    ? new Date(ev.endDate || markets[0].endDate).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })
     : "TBD";
 
-  // 顯示前 4 個選項
-  const preview = sorted.slice(0, 4);
-  const extra   = sorted.length - 4;
+  const preview = markets.slice(0, 4);
+  const extra   = markets.length - 4;
 
   const outcomeRows = preview.map((m) => {
     const pct   = Math.round(parseFloat((m.outcomePrices || ["0.5"])[0]) * 100);
-    const label = m.groupItemTitle || m.outcomes?.[0] || "—";
+    const label = m.groupItemTitle || m.outcomes?.[0] || m.question || "—";
     return `
       <div class="event-preview-row">
         <span class="event-preview-label">${label}</span>
         <div class="event-preview-bar-wrap">
           <div class="event-preview-bar" style="width:${pct}%"></div>
         </div>
-        <span class="event-preview-pct ${pct >= 50 ? 'green' : ''}">${pct}%</span>
-      </div>
-    `;
+        <span class="event-preview-pct ${pct >= 50 ? "green" : ""}">${pct}%</span>
+      </div>`;
   }).join("");
 
   card.innerHTML = `
@@ -301,34 +293,29 @@ function renderEventCard(card, markets) {
       ${extra > 0 ? `<div class="event-preview-more">+${extra} more outcomes</div>` : ""}
     </div>
     <div class="market-stats">
-      <div class="stat-item">
-        <div class="stat-label">24h Volume</div>
-        <div class="stat-value">${vol24h}</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Liquidity</div>
-        <div class="stat-value">${oi}</div>
-      </div>
-    </div>
-  `;
+      <div class="stat-item"><div class="stat-label">24h Volume</div><div class="stat-value">${vol24h}</div></div>
+      <div class="stat-item"><div class="stat-label">Liquidity</div><div class="stat-value">${oi}</div></div>
+    </div>`;
 
+  // 直接傳入 event 物件，不需要額外 API call
   card.addEventListener("click", () => {
-    openMarketDetailFromApi(first, 0, 0, vol24h, oi, endDate, icon);
+    const slug = ev.slug || markets[0]?.eventSlug || "";
+    openEventDetailModal(ev, markets, markets[0], vol24h, oi, endDate, icon);
   });
 }
 
 // ===== 單一 Yes/No 市場卡片 =====
-function renderBinaryCard(card, m) {
+function renderBinaryCard(card, m, parentEvent) {
   const yesPriceRaw = Array.isArray(m.outcomePrices)
     ? parseFloat(m.outcomePrices[0]) : 0.5;
   const yesPct  = Math.round(yesPriceRaw * 100);
   const noPct   = 100 - yesPct;
-  const vol24h  = fmtUSD(m.volume24hr ?? 0);
-  const oi      = fmtUSD(m.liquidity  ?? 0);
-  const endDate = m.endDate
-    ? new Date(m.endDate).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })
+  const vol24h  = fmtUSD(parseFloat(parentEvent?.volume24hr || m.volume24hr) || 0);
+  const oi      = fmtUSD(parseFloat(parentEvent?.liquidity  || m.liquidity)  || 0);
+  const endDate = (parentEvent?.endDate || m.endDate)
+    ? new Date(parentEvent?.endDate || m.endDate).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })
     : "TBD";
-  const icon    = m.image || m.icon || "";
+  const icon    = parentEvent?.image || m.image || m.icon || "";
   const isYes   = yesPct >= 50;
 
   card.innerHTML = `
@@ -362,10 +349,13 @@ function renderBinaryCard(card, m) {
       <button class="btn-trade no-btn" onclick="event.stopPropagation(); openBuyModal(event, ${JSON.stringify(m.question).replace(/"/g,"&quot;")}, 'No', ${noPct})">
         Buy NO &nbsp;<strong>${noPct}¢</strong>
       </button>
-    </div>
-  `;
+    </div>`;
 
-  card.addEventListener("click", () => openMarketDetailFromApi(m, yesPct, noPct, vol24h, oi, endDate, icon));
+  card.addEventListener("click", () => {
+    // 使用 parentEvent 的 slug 確保連結正確
+    const mWithSlug = { ...m, eventSlug: parentEvent?.slug || m.eventSlug };
+    openBinaryDetailModal(mWithSlug, yesPct, noPct, vol24h, oi, endDate, icon);
+  });
 }
 
 // ===== 渲染最近交易 =====
@@ -463,20 +453,21 @@ function renderNews(news) {
 // ===== 主要載入流程 =====
 async function loadAll() {
   // 先立即顯示備用資料，讓頁面不空白
-  renderMarkets(FALLBACK_MARKETS);
+  renderMarkets(FALLBACK_MARKETS.map((m) => ({ ...m, markets: [m] })));
   simulateLiveTrades();
   setApiStatus("loading", "連接中...");
 
-  // 背景嘗試取得真實資料
+  // 背景嘗試取得真實事件資料
   try {
-    const markets = await fetchMarkets();
-    if (markets && markets.length > 0) {
-      renderMarkets(markets);
+    const events = await fetchEvents();
+    if (events && events.length > 0) {
+      cachedEvents  = events;
+      cachedMarkets = events.flatMap((ev) => ev.markets || [ev]);
+      renderMarkets(events);
       setApiStatus("live", "即時數據 · Polymarket");
-      // 用真實市場名稱更新模擬交易
-      liveMarketNames = markets
+      liveMarketNames = events
         .slice(0, 10)
-        .map((m) => m.question)
+        .map((ev) => ev.title || ev.markets?.[0]?.question || "")
         .filter(Boolean);
     }
   } catch (err) {
@@ -523,15 +514,29 @@ const TAB_KEYWORDS = {
   "elon":         /elon|musk|doge|tesla|spacex|twitter|x\.com|tweets/i,
 };
 
-// ===== 市場篩選（用 API 資料）=====
-let cachedMarkets = [];
+// ===== 全域快取（Events + 平坦 Markets）=====
+let cachedEvents  = [];
+let cachedMarkets = []; // flat list，用於 Recent Trades 市場名稱
+
+function eventMatchesKeyword(ev, kw) {
+  if (kw.test(ev.title || "")) return true;
+  return (ev.markets || []).some((m) => kw.test(m.question || ""));
+}
 
 async function initTabsWithApi() {
   try {
-    cachedMarkets = await fetchMarkets();
+    cachedEvents = await fetchEvents();
   } catch (_) {
-    cachedMarkets = FALLBACK_MARKETS;
+    // fallback：把舊版模擬市場包成 events 格式
+    cachedEvents = FALLBACK_MARKETS.map((m) => ({ ...m, markets: [m] }));
   }
+
+  // 更新 flat markets（供 Recent Trades 使用市場名稱）
+  cachedMarkets = cachedEvents.flatMap((ev) => ev.markets || [ev]);
+  liveMarketNames = cachedEvents.map((ev) => ev.title || ev.markets?.[0]?.question || "").filter(Boolean);
+
+  // 初始渲染（全部）
+  renderMarkets(cachedEvents);
 
   const tabs = document.querySelectorAll(".tab");
   tabs.forEach((tab) => {
@@ -541,13 +546,12 @@ async function initTabsWithApi() {
       const key = tab.dataset.tab;
 
       if (key === "all" || !TAB_KEYWORDS[key]) {
-        renderMarkets(cachedMarkets);
+        renderMarkets(cachedEvents);
         return;
       }
 
-      // 用快取資料做關鍵字過濾，不重新呼叫 API
       const kw = TAB_KEYWORDS[key];
-      const filtered = cachedMarkets.filter((m) => kw.test(m.question || ""));
+      const filtered = cachedEvents.filter((ev) => eventMatchesKeyword(ev, kw));
       if (filtered.length === 0) {
         document.getElementById("markets-list").innerHTML =
           `<div class="empty-state">No markets found for this category.<br><span style="font-size:12px;color:var(--text-muted)">Try switching to "All" to see all markets.</span></div>`;
@@ -558,7 +562,7 @@ async function initTabsWithApi() {
   });
 }
 
-// ===== 篩選排序（用快取資料排序，不重打 API）=====
+// ===== 篩選排序（用 events 資料排序）=====
 function initFilters() {
   const filterBtns = document.querySelectorAll(".filter-btn");
   filterBtns.forEach((btn) => {
@@ -566,9 +570,19 @@ function initFilters() {
       filterBtns.forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       const order = btn.dataset.order || "volume24hr";
-      const sorted = [...cachedMarkets].sort((a, b) => {
+
+      // 取目前正在顯示的分類下過濾後的 events
+      const activeTab = document.querySelector(".tab.active");
+      const key = activeTab?.dataset?.tab || "all";
+      let base = cachedEvents;
+      if (key !== "all" && TAB_KEYWORDS[key]) {
+        const kw = TAB_KEYWORDS[key];
+        base = cachedEvents.filter((ev) => eventMatchesKeyword(ev, kw));
+      }
+
+      const sorted = [...base].sort((a, b) => {
         if (order === "liquidity") return (parseFloat(b.liquidity) || 0) - (parseFloat(a.liquidity) || 0);
-        if (order === "endDate")   return new Date(a.endDate) - new Date(b.endDate);
+        if (order === "endDate")   return new Date(a.endDate || 0) - new Date(b.endDate || 0);
         return (parseFloat(b.volume24hr) || 0) - (parseFloat(a.volume24hr) || 0);
       });
       renderMarkets(sorted);
@@ -576,21 +590,9 @@ function initFilters() {
   });
 }
 
-// ===== 市場詳情 Modal 入口：判斷單選or多選 =====
+// ===== 市場詳情 Modal 入口（僅保留為 binary fallback）=====
+// Event 卡片現在直接傳完整 event 物件，不再走此函式
 async function openMarketDetailFromApi(m, yesPct, noPct, vol24h, oi, endDate, icon) {
-  // 嘗試抓同一 event 的所有選項
-  const eventId = m.eventId || m.event_id;
-  if (eventId) {
-    try {
-      const event = await fetchEvent(eventId);
-      const markets = event?.markets || event?.data?.markets || [];
-      if (markets.length > 1) {
-        openEventDetailModal(event, markets, m, vol24h, oi, endDate, icon);
-        return;
-      }
-    } catch (_) {}
-  }
-  // 二元市場（Yes / No）
   openBinaryDetailModal(m, yesPct, noPct, vol24h, oi, endDate, icon);
 }
 
