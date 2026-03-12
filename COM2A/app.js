@@ -234,7 +234,6 @@ function renderMarkets(events) {
     if (markets.length > 1) {
       renderEventCard(card, ev);
     } else {
-      // 單一市場（binary Yes/No）或直接用 event 欄位
       const m = markets[0] || ev;
       renderBinaryCard(card, m, ev);
     }
@@ -276,18 +275,25 @@ function renderEventCard(card, ev) {
       </div>`;
   }).join("");
 
+  const evId     = String(ev.id || "");
+  const isTrend  = trendingIds.has(evId);
+  const isStarred = wlHas(evId);
+
   card.innerHTML = `
     <div class="market-header">
       <img class="market-icon" src="${icon}" alt=""
         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22><rect width=%2244%22 height=%2244%22 rx=%2210%22 fill=%22%231e1e2a%22/><text x=%2222%22 y=%2228%22 text-anchor=%22middle%22 fill=%22%236366f1%22 font-size=%2218%22>P</text></svg>'"/>
       <div class="market-info">
-        <div class="market-question">${title}</div>
+        <div class="market-question">
+          ${isTrend ? `<span class="trending-badge">🔥 Hot</span> ` : ""}${title}
+        </div>
         <div class="market-meta">
           <span class="platform-tag">Polymarket</span>
           <span class="market-end-date">Ends ${endDate}</span>
           <span class="outcomes-count-badge">${markets.length} outcomes</span>
         </div>
       </div>
+      <button class="card-star-btn ${isStarred ? "starred" : ""}" data-ev-id="${evId}" title="Add to Watchlist">★</button>
     </div>
     <div class="event-preview-outcomes">
       ${outcomeRows}
@@ -298,9 +304,14 @@ function renderEventCard(card, ev) {
       <div class="stat-item"><div class="stat-label">Liquidity</div><div class="stat-value">${oi}</div></div>
     </div>`;
 
-  // 直接傳入 event 物件，不需要額外 API call
+  card.querySelector(".card-star-btn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    const added = wlToggle(evId);
+    e.currentTarget.classList.toggle("starred", added);
+    showToast(added ? "Added to Watchlist ★" : "Removed from Watchlist");
+  });
+
   card.addEventListener("click", () => {
-    const slug = ev.slug || markets[0]?.eventSlug || "";
     openEventDetailModal(ev, markets, markets[0], vol24h, oi, endDate, icon);
   });
 }
@@ -318,20 +329,29 @@ function renderBinaryCard(card, m, parentEvent) {
   const icon    = parentEvent?.image || m.image || m.icon || "";
   const isYes   = yesPct >= 50;
 
+  const evId     = String(parentEvent?.id || m.id || "");
+  const isTrend  = trendingIds.has(evId);
+  const isStarred = wlHas(evId);
+
   card.innerHTML = `
     <div class="market-header">
       <img class="market-icon" src="${icon}" alt=""
         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22><rect width=%2244%22 height=%2244%22 rx=%2210%22 fill=%22%231e1e2a%22/><text x=%2222%22 y=%2228%22 text-anchor=%22middle%22 fill=%22%236366f1%22 font-size=%2218%22>P</text></svg>'"/>
       <div class="market-info">
-        <div class="market-question">${m.question}</div>
+        <div class="market-question">
+          ${isTrend ? `<span class="trending-badge">🔥 Hot</span> ` : ""}${m.question}
+        </div>
         <div class="market-meta">
           <span class="platform-tag">Polymarket</span>
           <span class="market-end-date">Ends ${endDate}</span>
         </div>
       </div>
-      <div class="stat-item" style="text-align:right;flex-shrink:0">
-        <div class="stat-label">YES</div>
-        <div class="stat-value ${isYes ? "green" : "red"}">${yesPct}¢</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <div style="text-align:right">
+          <div class="stat-label">YES</div>
+          <div class="stat-value ${isYes ? "green" : "red"}">${yesPct}¢</div>
+        </div>
+        <button class="card-star-btn ${isStarred ? "starred" : ""}" data-ev-id="${evId}" title="Add to Watchlist">★</button>
       </div>
     </div>
     <div class="yes-no-bar">
@@ -351,8 +371,14 @@ function renderBinaryCard(card, m, parentEvent) {
       </button>
     </div>`;
 
+  card.querySelector(".card-star-btn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    const added = wlToggle(evId);
+    e.currentTarget.classList.toggle("starred", added);
+    showToast(added ? "Added to Watchlist ★" : "Removed from Watchlist");
+  });
+
   card.addEventListener("click", () => {
-    // 使用 parentEvent 的 slug 確保連結正確
     const mWithSlug = { ...m, eventSlug: parentEvent?.slug || m.eventSlug };
     openBinaryDetailModal(mWithSlug, yesPct, noPct, vol24h, oi, endDate, icon);
   });
@@ -463,12 +489,11 @@ async function loadAll() {
     if (events && events.length > 0) {
       cachedEvents  = events;
       cachedMarkets = events.flatMap((ev) => ev.markets || [ev]);
+      liveMarketNames = events.slice(0, 10).map((ev) => ev.title || ev.markets?.[0]?.question || "").filter(Boolean);
+      computeTrending(events);
+      updateStatsBar(events);
       renderMarkets(events);
       setApiStatus("live", "即時數據 · Polymarket");
-      liveMarketNames = events
-        .slice(0, 10)
-        .map((ev) => ev.title || ev.markets?.[0]?.question || "")
-        .filter(Boolean);
     }
   } catch (err) {
     setApiStatus("error", "顯示備用數據");
@@ -548,14 +573,7 @@ function buildTabs(events) {
       container.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
       activeTagId = tab.dataset.tagId || "all";
-
-      const filtered = filterEventsByTag(cachedEvents, activeTagId);
-      if (filtered.length === 0) {
-        document.getElementById("markets-list").innerHTML =
-          `<div class="empty-state">No markets found for this category.</div>`;
-      } else {
-        renderMarkets(filtered);
-      }
+      applyCurrentFilters();
     });
   });
 }
@@ -578,26 +596,19 @@ async function initTabsWithApi() {
   cachedMarkets  = cachedEvents.flatMap((ev) => ev.markets || [ev]);
   liveMarketNames = cachedEvents.map((ev) => ev.title || ev.markets?.[0]?.question || "").filter(Boolean);
 
+  computeTrending(cachedEvents);
+  updateStatsBar(cachedEvents);
   buildTabs(cachedEvents);
   renderMarkets(cachedEvents);
 }
 
 // ===== 篩選排序 =====
 function initFilters() {
-  const filterBtns = document.querySelectorAll(".filter-btn");
-  filterBtns.forEach((btn) => {
+  document.querySelectorAll(".filter-btn:not(.watchlist-toggle)").forEach((btn) => {
     btn.addEventListener("click", () => {
-      filterBtns.forEach((b) => b.classList.remove("active"));
+      document.querySelectorAll(".filter-btn:not(.watchlist-toggle)").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-      const order = btn.dataset.order || "volume24hr";
-
-      const base   = filterEventsByTag(cachedEvents, activeTagId);
-      const sorted = [...base].sort((a, b) => {
-        if (order === "liquidity") return (parseFloat(b.liquidity) || 0) - (parseFloat(a.liquidity) || 0);
-        if (order === "endDate")   return new Date(a.endDate || 0) - new Date(b.endDate || 0);
-        return (parseFloat(b.volume24hr) || 0) - (parseFloat(a.volume24hr) || 0);
-      });
-      renderMarkets(sorted);
+      applyCurrentFilters();
     });
   });
 }
@@ -1207,6 +1218,165 @@ function simulateLiveTrades() {
   }, 4000);
 }
 
+// ===== Watchlist (localStorage) =====
+function wlLoad() {
+  try { return JSON.parse(localStorage.getItem("pm_watchlist") || "[]"); }
+  catch (_) { return []; }
+}
+function wlSave(ids) {
+  try { localStorage.setItem("pm_watchlist", JSON.stringify(ids)); } catch (_) {}
+}
+function wlHas(id) { return wlLoad().includes(String(id)); }
+function wlToggle(id) {
+  const ids = wlLoad();
+  const sid = String(id);
+  const next = ids.includes(sid) ? ids.filter((x) => x !== sid) : [...ids, sid];
+  wlSave(next);
+  updateWatchlistBadge();
+  return next.includes(sid);
+}
+function updateWatchlistBadge() {
+  const ids = wlLoad();
+  const cnt = document.getElementById("watchlist-count");
+  if (!cnt) return;
+  if (ids.length > 0) {
+    cnt.textContent = ids.length;
+    cnt.style.display = "";
+  } else {
+    cnt.style.display = "none";
+  }
+}
+
+// ===== Watchlist Toggle Filter =====
+let showWatchlistOnly = false;
+function initWatchlistToggle() {
+  const btn = document.getElementById("watchlist-toggle");
+  const navBtn = document.getElementById("btn-watchlist-nav");
+  const handler = () => {
+    showWatchlistOnly = !showWatchlistOnly;
+    btn?.classList.toggle("wl-active", showWatchlistOnly);
+    navBtn?.classList.toggle("active", showWatchlistOnly);
+    applyCurrentFilters();
+  };
+  btn?.addEventListener("click", handler);
+  navBtn?.addEventListener("click", handler);
+}
+
+function applyCurrentFilters() {
+  const activeTab = document.querySelector("#category-tabs .tab.active");
+  const tagId = activeTab?.dataset?.tagId || "all";
+  let base = filterEventsByTag(cachedEvents, tagId);
+  if (showWatchlistOnly) {
+    const ids = wlLoad();
+    base = base.filter((ev) => ids.includes(String(ev.id)));
+  }
+  const activeOrder = document.querySelector(".filter-btn.active:not(.watchlist-toggle)");
+  const order = activeOrder?.dataset?.order || "volume24hr";
+  const sorted = sortEvents(base, order);
+  renderMarkets(sorted);
+}
+
+function sortEvents(events, order) {
+  return [...events].sort((a, b) => {
+    if (order === "liquidity") return (parseFloat(b.liquidity) || 0) - (parseFloat(a.liquidity) || 0);
+    if (order === "endDate")   return new Date(a.endDate || 0) - new Date(b.endDate || 0);
+    if (order === "newest")    return new Date(b.startDate || b.createdAt || 0) - new Date(a.startDate || a.createdAt || 0);
+    return (parseFloat(b.volume24hr) || 0) - (parseFloat(a.volume24hr) || 0);
+  });
+}
+
+// ===== Search =====
+let searchQuery = "";
+function initSearch() {
+  const input = document.getElementById("navbar-search-input");
+  const clearBtn = document.getElementById("search-clear");
+  if (!input) return;
+
+  let timer;
+  input.addEventListener("input", () => {
+    clearTimeout(timer);
+    searchQuery = input.value.trim();
+    clearBtn.style.display = searchQuery ? "" : "none";
+    timer = setTimeout(() => {
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const filtered = cachedEvents.filter((ev) => {
+          if ((ev.title || "").toLowerCase().includes(q)) return true;
+          return (ev.markets || []).some((m) => (m.question || "").toLowerCase().includes(q));
+        });
+        if (filtered.length === 0) {
+          document.getElementById("markets-list").innerHTML = `
+            <div class="search-empty">
+              <strong>No results for "${searchQuery}"</strong>
+              Try a different keyword or browse categories above.
+            </div>`;
+        } else {
+          renderMarkets(filtered);
+        }
+      } else {
+        applyCurrentFilters();
+      }
+    }, 250);
+  });
+
+  clearBtn.addEventListener("click", () => {
+    input.value = "";
+    searchQuery = "";
+    clearBtn.style.display = "none";
+    applyCurrentFilters();
+  });
+}
+
+// ===== Market Stats Bar =====
+function updateStatsBar(events) {
+  const bar = document.getElementById("market-stats-bar");
+  const countEl = document.getElementById("stats-count");
+  const volEl   = document.getElementById("stats-vol");
+  if (!bar) return;
+  const total = events.length;
+  const totalVol = events.reduce((s, ev) => s + parseFloat(ev.volume24hr || 0), 0);
+  countEl.textContent = `${total} markets`;
+  volEl.textContent   = `${fmtUSD(totalVol)} 24h vol`;
+  bar.style.display   = "";
+}
+
+// ===== Top Traders =====
+const TOP_TRADERS_DATA = [
+  { name: "Whale-Hunter",   initials: "WH", color: "#6366f1", trades: 142, pnl:  84200 },
+  { name: "Alpha-Signal",   initials: "AS", color: "#22c55e", trades:  97, pnl:  51700 },
+  { name: "Dark-Prophet",   initials: "DP", color: "#f59e0b", trades: 214, pnl:  33900 },
+  { name: "Quiet-Thunder",  initials: "QT", color: "#f97316", trades:  76, pnl:  18400 },
+  { name: "Swift-Oracle",   initials: "SO", color: "#ec4899", trades: 103, pnl:  11200 },
+  { name: "Iron-Compass",   initials: "IC", color: "#14b8a6", trades:  55, pnl:  -4800 },
+  { name: "Lucky-Tide",     initials: "LT", color: "#a855f7", trades:  89, pnl: -12300 },
+];
+
+function renderTopTraders() {
+  const container = document.getElementById("traders-list");
+  if (!container) return;
+  const rankClass = (i) => i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
+  container.innerHTML = TOP_TRADERS_DATA.map((t, i) => `
+    <div class="trader-item">
+      <span class="trader-rank ${rankClass(i)}">${i < 3 ? ["🥇","🥈","🥉"][i] : i + 1}</span>
+      <div class="trader-avatar-sm" style="background:linear-gradient(135deg,${t.color},${t.color}88)">${t.initials}</div>
+      <div class="trader-info">
+        <div class="trader-name">${t.name}</div>
+        <div class="trader-trades">${t.trades} trades</div>
+      </div>
+      <div class="trader-pnl ${t.pnl >= 0 ? "profit" : "loss"}">
+        ${t.pnl >= 0 ? "+" : ""}${fmtUSD(t.pnl)}
+      </div>
+    </div>
+  `).join("");
+}
+
+// ===== Trending: 前 5 大 24h Volume 的 event id =====
+let trendingIds = new Set();
+function computeTrending(events) {
+  const sorted = [...events].sort((a, b) => (parseFloat(b.volume24hr) || 0) - (parseFloat(a.volume24hr) || 0));
+  trendingIds = new Set(sorted.slice(0, 5).map((ev) => String(ev.id)));
+}
+
 // ===== 初始化 =====
 document.addEventListener("DOMContentLoaded", () => {
   initModal();
@@ -1215,4 +1385,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initTabsWithApi();
   initFilters();
   startTradePolling();
+  initSearch();
+  initWatchlistToggle();
+  updateWatchlistBadge();
+  renderTopTraders();
 });
