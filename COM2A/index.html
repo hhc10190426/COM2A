@@ -8,6 +8,35 @@
   <meta http-equiv="Pragma" content="no-cache"/>
   <meta http-equiv="Expires" content="0"/>
   <link rel="stylesheet" href="styles.css?v=7" />
+  <style>
+    /* 強制 3 欄 grid，不依賴 CSS 快取 */
+    #markets-list {
+      display: grid !important;
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 10px !important;
+    }
+    #markets-list .market-card {
+      min-width: 0 !important;
+      overflow: hidden !important;
+      padding: 14px 16px !important;
+      gap: 10px !important;
+    }
+    .event-preview-label {
+      font-size: 12px !important;
+      min-width: 0 !important;
+      max-width: 110px !important;
+      flex-shrink: 1 !important;
+    }
+    .event-preview-pct { font-size: 12px !important; min-width: 28px !important; }
+    .market-icon { width: 36px !important; height: 36px !important; }
+    .market-question { font-size: 12.5px !important; }
+    @media (max-width: 900px) {
+      #markets-list { grid-template-columns: repeat(2, 1fr) !important; }
+    }
+    @media (max-width: 560px) {
+      #markets-list { grid-template-columns: 1fr !important; }
+    }
+  </style>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </head>
