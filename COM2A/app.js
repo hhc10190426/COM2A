@@ -502,7 +502,7 @@ async function openEventDetailModal(event, markets, currentMarket, vol24h, oi, e
   if (existing) existing.remove();
 
   const title    = event.title || currentMarket.question;
-  const slug     = event.slug  || currentMarket.slug || "";
+  const slug     = event.slug || currentMarket.eventSlug || currentMarket.slug || "";
   const polyUrl  = slug ? `https://polymarket.com/event/${slug}` : "https://polymarket.com/";
 
   // 整理每個選項
@@ -657,8 +657,9 @@ async function openBinaryDetailModal(m, yesPct, noPct, vol24h, oi, endDate, icon
   const existing = document.getElementById("market-detail-modal");
   if (existing) existing.remove();
 
-  // Polymarket 頁面連結
-  const slug = m.slug || m.eventSlug || "";
+  // Polymarket 頁面連結（優先用 eventSlug）
+  const slug = m.eventSlug || m.slug || "";
+  console.log("Market slugs →", { slug: m.slug, eventSlug: m.eventSlug, using: slug });
   const polyUrl = slug
     ? `https://polymarket.com/event/${slug}`
     : `https://polymarket.com/`;
