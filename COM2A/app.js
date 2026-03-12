@@ -221,14 +221,22 @@ function renderMarkets(events) {
   const container = document.getElementById("markets-list");
   container.innerHTML = "";
 
+  // 直接用 JS inline style 強制 3 欄 grid（最高優先）
+  container.style.display = "grid";
+  container.style.gridTemplateColumns = "repeat(3, 1fr)";
+  container.style.gap = "10px";
+
   if (!events || events.length === 0) {
-    container.innerHTML = `<div class="empty-state">No active markets found.</div>`;
+    container.innerHTML = `<div class="empty-state" style="grid-column:1/-1">No active markets found.</div>`;
     return;
   }
 
   events.forEach((ev) => {
     const card = document.createElement("div");
     card.className = "market-card";
+    // 防止 grid item 被內容撐開
+    card.style.minWidth = "0";
+    card.style.overflow = "hidden";
     const markets = ev.markets || [];
 
     if (markets.length > 1) {
