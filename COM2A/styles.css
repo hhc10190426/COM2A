@@ -2041,16 +2041,20 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
 
 /* ── Crypto 頁面專用 ── */
 
-/* 時間篩選 tabs（頂部橫向） */
+/* 時間篩選列（頂部，左對齊） */
+.crypto-time-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 0 6px;
+  border-bottom: 1px solid var(--border);
+}
+
 .crypto-time-tabs {
   display: flex;
   gap: 4px;
   flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 8px 0 6px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 2px;
 }
 .crypto-time-tabs::-webkit-scrollbar { display: none; }
 
@@ -2058,7 +2062,7 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   flex-shrink: 0;
   padding: 5px 14px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 500;
   background: transparent;
   border: 1px solid transparent;
@@ -2069,38 +2073,51 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
 }
 .crypto-time-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .crypto-time-btn.active {
-  background: rgba(99,102,241,0.15);
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text-primary);
   font-weight: 600;
 }
 
-/* 類型篩選 + 排序列 */
-.crypto-filters-bar {
+/* Crypto 標題列 */
+.crypto-header-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 8px 0 6px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 10px;
+  justify-content: space-between;
+  padding: 14px 0 8px;
 }
 
-.crypto-type-tabs {
+/* 幣種篩選 + 排序 列 */
+.crypto-filter-row {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
   flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
-  flex: 1;
 }
-.crypto-type-tabs::-webkit-scrollbar { display: none; }
+.crypto-filter-row::-webkit-scrollbar { display: none; }
 
-.crypto-type-btn {
+.crypto-asset-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.crypto-asset-pills::-webkit-scrollbar { display: none; }
+
+.crypto-asset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   flex-shrink: 0;
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12.5px;
   font-weight: 500;
   background: transparent;
   border: 1px solid var(--border);
@@ -2109,19 +2126,75 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   transition: background 0.15s, color 0.15s, border-color 0.15s;
   white-space: nowrap;
 }
-.crypto-type-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-.crypto-type-btn.active {
-  background: rgba(99,102,241,0.15);
-  border-color: var(--accent);
-  color: var(--accent);
+.crypto-asset-btn:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--text-muted); }
+.crypto-asset-btn.active {
+  background: var(--bg-card);
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
   font-weight: 600;
 }
 
-.crypto-sort-group {
+.crypto-coin-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.crypto-count-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  border-radius: 999px;
+  padding: 1px 5px;
+}
+.crypto-asset-btn.active .crypto-count-badge {
+  background: rgba(99,102,241,0.15);
+  color: var(--accent);
+}
+
+.crypto-sort-wrap {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+}
+
+/* 類型篩選列（All / Up Down / Above Below...）*/
+.crypto-type-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 0 4px;
+  margin-bottom: 4px;
+}
+
+.crypto-type-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.crypto-type-btn {
+  flex-shrink: 0;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.crypto-type-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.crypto-type-btn.active {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 /* Portfolio 模式：全寬，覆蓋 inline !important grid */

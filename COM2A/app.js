@@ -1783,108 +1783,9 @@ function initSportsFilters() {
 }
 
 // ===== Crypto 頁面 =====
-const CRYPTO_ASSETS = [
-  { id: "all",       icon: "⚡", label: "All Crypto" },
-  { id: "bitcoin",   icon: "₿",  label: "Bitcoin",    children: [
-    { id: "btc-updown", label: "Up / Down" },
-    { id: "btc-above",  label: "Above / Below" },
-    { id: "btc-price",  label: "Price Range" },
-    { id: "btc-hit",    label: "Hit Price" },
-  ]},
-  { id: "ethereum",  icon: "Ξ",  label: "Ethereum",   children: [
-    { id: "eth-updown", label: "Up / Down" },
-    { id: "eth-above",  label: "Above / Below" },
-    { id: "eth-price",  label: "Price Range" },
-  ]},
-  { id: "solana",    icon: "◎",  label: "Solana" },
-  { id: "xrp",       icon: "✕",  label: "XRP" },
-  { id: "dogecoin",  icon: "Ð",  label: "Dogecoin" },
-  { id: "bnb",       icon: "◈",  label: "BNB" },
-  { id: "microstrategy", icon: "📊", label: "MicroStrategy" },
-  { id: "defi",      icon: "🔷", label: "DeFi" },
-  { id: "nft",       icon: "🖼",  label: "NFT" },
-  { id: "stablecoins", icon: "💵", label: "Stablecoins" },
-  { id: "exchanges", icon: "🏦", label: "Exchanges" },
-  { id: "token-launch", icon: "🚀", label: "Token Launch" },
-];
-
-let cryptoAsset = "all";
 let cryptoTime  = "all";
 let cryptoType  = "all";
 let cryptoOrder = "volume24hr";
-const expandedCryptoGroups = new Set();
-
-function buildCryptoAssetTabs() {
-  const container = document.getElementById("crypto-asset-tabs");
-  if (!container) return;
-
-  const html = CRYPTO_ASSETS.map((cat) => {
-    const hasChildren = Array.isArray(cat.children) && cat.children.length > 0;
-    const isExpanded = expandedCryptoGroups.has(cat.id);
-    const isActive = cryptoAsset === cat.id || (cat.children && cat.children.some((c) => c.id === cryptoAsset));
-
-    if (!hasChildren) {
-      return `<button class="sports-cat-parent${isActive ? " active" : ""}" data-id="${cat.id}" data-leaf="true">
-        <span class="scp-icon">${cat.icon}</span>
-        <span class="scp-label">${cat.label}</span>
-      </button>`;
-    }
-
-    const childrenHtml = cat.children.map((child) =>
-      `<button class="sports-cat-child${cryptoAsset === child.id ? " active" : ""}" data-id="${child.id}">${child.label}</button>`
-    ).join("");
-
-    return `<div class="sports-cat-group${isExpanded ? " expanded" : ""}">
-      <button class="sports-cat-parent${isActive && cryptoAsset === cat.id ? " active" : ""}" data-id="${cat.id}" data-leaf="false">
-        <span class="scp-icon">${cat.icon}</span>
-        <span class="scp-label">${cat.label}</span>
-        <span class="scp-chevron">›</span>
-      </button>
-      <div class="sports-cat-children">${childrenHtml}</div>
-    </div>`;
-  }).join("");
-
-  container.innerHTML = html;
-
-  container.querySelectorAll(".sports-cat-parent").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const id = btn.dataset.id;
-      if (btn.dataset.leaf === "true") {
-        cryptoAsset = id;
-        updateCryptoActiveState();
-        renderCryptoMarkets();
-      } else {
-        const group = btn.closest(".sports-cat-group");
-        if (group) {
-          const wasExpanded = group.classList.contains("expanded");
-          group.classList.toggle("expanded", !wasExpanded);
-          if (!wasExpanded) expandedCryptoGroups.add(id);
-          else expandedCryptoGroups.delete(id);
-        }
-      }
-    });
-  });
-
-  container.querySelectorAll(".sports-cat-child").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      cryptoAsset = btn.dataset.id;
-      updateCryptoActiveState();
-      renderCryptoMarkets();
-    });
-  });
-}
-
-function updateCryptoActiveState() {
-  const container = document.getElementById("crypto-asset-tabs");
-  if (!container) return;
-  container.querySelectorAll(".sports-cat-parent, .sports-cat-child").forEach((el) => el.classList.remove("active"));
-  container.querySelectorAll(`[data-id="${cryptoAsset}"]`).forEach((el) => el.classList.add("active"));
-  CRYPTO_ASSETS.forEach((cat) => {
-    if (cat.children && cat.children.some((c) => c.id === cryptoAsset)) {
-      container.querySelector(`.sports-cat-parent[data-id="${cat.id}"]`)?.classList.add("active");
-    }
-  });
-}
 
 function renderCryptoMarkets() {
   const container = document.getElementById("crypto-markets-list");
@@ -1897,11 +1798,22 @@ function renderCryptoMarkets() {
 
 function initCryptoFilters() {
   // 時間 tabs
-  document.getElementById("crypto-time-tabs")?.querySelectorAll(".crypto-time-btn").forEach((btn) => {
+  const timeTabs = document.getElementById("crypto-time-tabs");
+  timeTabs?.querySelectorAll(".crypto-time-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.getElementById("crypto-time-tabs").querySelectorAll(".crypto-time-btn").forEach((b) => b.classList.remove("active"));
+      timeTabs.querySelectorAll(".crypto-time-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       cryptoTime = btn.dataset.time;
+      renderCryptoMarkets();
+    });
+  });
+
+  // 幣種篩選按鈕
+  document.getElementById("crypto-asset-tabs")?.querySelectorAll(".crypto-asset-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.getElementById("crypto-asset-tabs").querySelectorAll(".crypto-asset-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      cryptoTime = btn.dataset.asset;
       renderCryptoMarkets();
     });
   });
@@ -1916,12 +1828,12 @@ function initCryptoFilters() {
     });
   });
 
-  // 排序按鈕（共用 sports-filter-btn，但只作用於 crypto 區）
+  // 排序按鈕
   ["crypto-sort-vol", "crypto-sort-liq", "crypto-sort-end"].forEach((id) => {
     document.getElementById(id)?.addEventListener("click", (e) => {
       const btn = e.currentTarget;
-      [document.getElementById("crypto-sort-vol"), document.getElementById("crypto-sort-liq"), document.getElementById("crypto-sort-end")]
-        .forEach((b) => b?.classList.remove("active"));
+      ["crypto-sort-vol", "crypto-sort-liq", "crypto-sort-end"]
+        .forEach((bid) => document.getElementById(bid)?.classList.remove("active"));
       btn.classList.add("active");
       cryptoOrder = btn.dataset.order;
       renderCryptoMarkets();
@@ -1930,7 +1842,6 @@ function initCryptoFilters() {
 }
 
 function loadCryptoView() {
-  buildCryptoAssetTabs();
   renderCryptoMarkets();
 }
 
