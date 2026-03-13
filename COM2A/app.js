@@ -547,26 +547,67 @@ let activeTagId   = "all"; // 目前選中的 tag id
 // ===== 解析 outcomePrices（可能是 string 或 array）=====
 // ===== 體育項目備用圖（當 event 沒有官方圖時使用）=====
 const SPORT_FALLBACK_IMGS = {
-  nba:            "sports/basketball_basket_ball_sport-01.png",
-  ncaab:          "sports/basketball_basket_ball_sport-01.png",
-  mlb:            "sports/baseball_softball_bat_ball_sport-01.png",
-  kbo:            "sports/baseball_softball_bat_ball_sport-01.png",
-  wbc:            "sports/baseball_softball_bat_ball_sport-01.png",
-  cricket:        "sports/baseball_softball_cricket_sport-01.png",
-  ipl:            "sports/baseball_softball_cricket_sport-01.png",
-  ufc:            "sports/boxing_glove_gloves_sport-01.png",
-  boxing:         "sports/boxing_glove_gloves_sport-01.png",
-  mma:            "sports/boxing_glove_gloves_sport-01.png",
-  nfl:            "sports/football_american_rugby_sport-01.png",
-  cfb:            "sports/football_american_rugby_sport-01.png",
-  rugby:          "sports/football_american_rugby_sport-01.png",
-  golf:           "sports/golf_green_sport_hole_flag-01.png",
-  pga:            "sports/golf_green_sport_hole_flag-01.png",
-  f1:             "sports/motorcycle_helmet_race_safety-01.png",
-  "formula-1":    "sports/motorcycle_helmet_race_safety-01.png",
-  formula1:       "sports/motorcycle_helmet_race_safety-01.png",
-  "table-tennis": "sports/ping_pong_tennis_table-01.png",
-  pickleball:     "sports/badminton_shuttlecock_game_sport-01.png",
+  // 籃球
+  nba:                       "sports/basketball_basket_ball_sport-01.png",
+  ncaab:                     "sports/basketball_basket_ball_sport-01.png",
+  // 足球
+  soccer:                    "sports/soccer_football_handball_sport-01.png",
+  football:                  "sports/soccer_football_handball_sport-01.png",
+  ucl:                       "sports/soccer_football_handball_sport-01.png",
+  epl:                       "sports/soccer_football_handball_sport-01.png",
+  "la-liga":                 "sports/soccer_football_handball_sport-01.png",
+  laliga:                    "sports/soccer_football_handball_sport-01.png",
+  bundesliga:                "sports/soccer_football_handball_sport-01.png",
+  "serie-a":                 "sports/soccer_football_handball_sport-01.png",
+  "ligue-1":                 "sports/soccer_football_handball_sport-01.png",
+  mls:                       "sports/soccer_football_handball_sport-01.png",
+  "liga-mx":                 "sports/soccer_football_handball_sport-01.png",
+  "k-league":                "sports/soccer_football_handball_sport-01.png",
+  "j-league":                "sports/soccer_football_handball_sport-01.png",
+  "saudi-professional-league":"sports/soccer_football_handball_sport-01.png",
+  uef:                       "sports/soccer_football_handball_sport-01.png",
+  "a-league":                "sports/soccer_football_handball_sport-01.png",
+  eredivisie:                "sports/soccer_football_handball_sport-01.png",
+  "primeira-liga":           "sports/soccer_football_handball_sport-01.png",
+  "super-lig":               "sports/soccer_football_handball_sport-01.png",
+  fifa:                      "sports/soccer_football_handball_sport-01.png",
+  // 冰球
+  nhl:                       "sports/ice_hockey_stick_puck_sport-01.png",
+  "ice-hockey":              "sports/ice_hockey_stick_puck_sport-01.png",
+  // 網球
+  tennis:                    "sports/tennis_racket_sport-01.png",
+  atp:                       "sports/tennis_racket_sport-01.png",
+  wta:                       "sports/tennis_racket_sport-01.png",
+  wimbledon:                 "sports/tennis_racket_sport-01.png",
+  "us-open":                 "sports/tennis_racket_sport-01.png",
+  // 棒球
+  mlb:                       "sports/baseball_softball_bat_ball_sport-01.png",
+  kbo:                       "sports/baseball_softball_bat_ball_sport-01.png",
+  wbc:                       "sports/baseball_softball_bat_ball_sport-01.png",
+  // 板球
+  cricket:                   "sports/baseball_softball_cricket_sport-01.png",
+  ipl:                       "sports/baseball_softball_cricket_sport-01.png",
+  // 格鬥
+  ufc:                       "sports/boxing_glove_gloves_sport-01.png",
+  boxing:                    "sports/boxing_glove_gloves_sport-01.png",
+  mma:                       "sports/boxing_glove_gloves_sport-01.png",
+  // 美式足球 / 橄欖球
+  nfl:                       "sports/football_american_rugby_sport-01.png",
+  cfb:                       "sports/football_american_rugby_sport-01.png",
+  rugby:                     "sports/football_american_rugby_sport-01.png",
+  // 高爾夫
+  golf:                      "sports/golf_green_sport_hole_flag-01.png",
+  pga:                       "sports/golf_green_sport_hole_flag-01.png",
+  // 賽車（換成方向盤）
+  f1:                        "sports/steering_wheel_rally_racing-01.png",
+  "formula-1":               "sports/steering_wheel_rally_racing-01.png",
+  formula1:                  "sports/steering_wheel_rally_racing-01.png",
+  nascar:                    "sports/steering_wheel_rally_racing-01.png",
+  // 桌球
+  "table-tennis":            "sports/ping_pong_tennis_table-01.png",
+  // 羽毛球 / 匹克球
+  badminton:                 "sports/badminton_shuttlecock_game_sport-01.png",
+  pickleball:                "sports/badminton_shuttlecock_game_sport-01.png",
 };
 
 /** 根據 event tags 取得對應的體育備用圖 */
@@ -1570,63 +1611,63 @@ function setSportsStatus(state, text) {
 const _SI = "sports/";
 const POLYMARKET_SPORTS = [
   // 總覽
-  { id: "all",                       label: "All Sports",      img: null              },
+  { id: "all",                       label: "All Sports",       img: null                                              },
   // 籃球
-  { id: "nba",                       label: "NBA",             img: _SI + "basketball_basket_ball_sport-01.png"      },
-  { id: "ncaab",                     label: "NCAAB",           img: _SI + "basketball_basket_ball_sport-01.png"      },
-  // 足球（Soccer）— 沒有對應圖，用 emoji
-  { id: "ucl",                       label: "⚽ UCL",          img: null              },
-  { id: "epl",                       label: "⚽ EPL",          img: null              },
-  { id: "la-liga",                   label: "⚽ La Liga",      img: null              },
-  { id: "bundesliga",                label: "⚽ Bundesliga",   img: null              },
-  { id: "serie-a",                   label: "⚽ Serie A",      img: null              },
-  { id: "ligue-1",                   label: "⚽ Ligue 1",      img: null              },
-  { id: "mls",                       label: "⚽ MLS",          img: null              },
-  { id: "liga-mx",                   label: "⚽ Liga MX",      img: null              },
-  { id: "k-league",                  label: "⚽ K-League",     img: null              },
-  { id: "j-league",                  label: "⚽ J. League",    img: null              },
-  { id: "saudi-professional-league", label: "⚽ Saudi PL",     img: null              },
-  { id: "uef",                       label: "⚽ UEFA Europa",  img: null              },
-  { id: "a-league",                  label: "⚽ A-League",     img: null              },
-  { id: "eredivisie",                label: "⚽ Eredivisie",   img: null              },
-  { id: "primeira-liga",             label: "⚽ Primeira Liga",img: null              },
-  { id: "super-lig",                 label: "⚽ Süper Lig",    img: null              },
-  { id: "fifa",                      label: "⚽ FIFA",         img: null              },
-  // 冰球 — 暫無圖
-  { id: "nhl",                       label: "🏒 NHL",          img: null              },
+  { id: "nba",                       label: "NBA",              img: _SI + "basketball_basket_ball_sport-01.png"      },
+  { id: "ncaab",                     label: "NCAAB",            img: _SI + "basketball_basket_ball_sport-01.png"      },
+  // 足球（Soccer）— soccer 圖
+  { id: "ucl",                       label: "UCL",              img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "epl",                       label: "EPL",              img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "la-liga",                   label: "La Liga",          img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "bundesliga",                label: "Bundesliga",       img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "serie-a",                   label: "Serie A",          img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "ligue-1",                   label: "Ligue 1",          img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "mls",                       label: "MLS",              img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "liga-mx",                   label: "Liga MX",          img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "k-league",                  label: "K-League",         img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "j-league",                  label: "J. League",        img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "saudi-professional-league", label: "Saudi PL",         img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "uef",                       label: "UEFA Europa",      img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "a-league",                  label: "A-League",         img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "eredivisie",                label: "Eredivisie",       img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "primeira-liga",             label: "Primeira Liga",    img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "super-lig",                 label: "Süper Lig",        img: _SI + "soccer_football_handball_sport-01.png"    },
+  { id: "fifa",                      label: "FIFA",             img: _SI + "soccer_football_handball_sport-01.png"    },
+  // 冰球
+  { id: "nhl",                       label: "NHL",              img: _SI + "ice_hockey_stick_puck_sport-01.png"       },
   // 電競 — 暫無圖
-  { id: "esports",                   label: "🎮 Esports",      img: null              },
-  { id: "cs2",                       label: "🎮 CS2",          img: null              },
-  { id: "league-of-legends",         label: "🎮 LoL",          img: null              },
-  { id: "dota-2",                    label: "🎮 Dota 2",       img: null              },
-  { id: "valorant",                  label: "🎮 Valorant",     img: null              },
-  // 網球 — 暫無圖
-  { id: "tennis",                    label: "🎾 Tennis",       img: null              },
-  { id: "atp",                       label: "🎾 ATP",          img: null              },
-  { id: "wta",                       label: "🎾 WTA",          img: null              },
+  { id: "esports",                   label: "🎮 Esports",       img: null                                              },
+  { id: "cs2",                       label: "🎮 CS2",           img: null                                              },
+  { id: "league-of-legends",         label: "🎮 LoL",           img: null                                              },
+  { id: "dota-2",                    label: "🎮 Dota 2",        img: null                                              },
+  { id: "valorant",                  label: "🎮 Valorant",      img: null                                              },
+  // 網球
+  { id: "tennis",                    label: "Tennis",           img: _SI + "tennis_racket_sport-01.png"               },
+  { id: "atp",                       label: "ATP",              img: _SI + "tennis_racket_sport-01.png"               },
+  { id: "wta",                       label: "WTA",              img: _SI + "tennis_racket_sport-01.png"               },
   // 板球
-  { id: "cricket",                   label: "Cricket",         img: _SI + "baseball_softball_cricket_sport-01.png"   },
-  { id: "ipl",                       label: "IPL",             img: _SI + "baseball_softball_cricket_sport-01.png"   },
+  { id: "cricket",                   label: "Cricket",          img: _SI + "baseball_softball_cricket_sport-01.png"   },
+  { id: "ipl",                       label: "IPL",              img: _SI + "baseball_softball_cricket_sport-01.png"   },
   // 棒球
-  { id: "mlb",                       label: "MLB",             img: _SI + "baseball_softball_bat_ball_sport-01.png"  },
-  { id: "kbo",                       label: "KBO",             img: _SI + "baseball_softball_bat_ball_sport-01.png"  },
+  { id: "mlb",                       label: "MLB",              img: _SI + "baseball_softball_bat_ball_sport-01.png"  },
+  { id: "kbo",                       label: "KBO",              img: _SI + "baseball_softball_bat_ball_sport-01.png"  },
   // 美式足球 / 橄欖球
-  { id: "nfl",                       label: "NFL",             img: _SI + "football_american_rugby_sport-01.png"     },
-  { id: "cfb",                       label: "CFB",             img: _SI + "football_american_rugby_sport-01.png"     },
-  { id: "rugby",                     label: "Rugby",           img: _SI + "football_american_rugby_sport-01.png"     },
-  // 賽車
-  { id: "f1",                        label: "Formula 1",       img: _SI + "motorcycle_helmet_race_safety-01.png"     },
+  { id: "nfl",                       label: "NFL",              img: _SI + "football_american_rugby_sport-01.png"     },
+  { id: "cfb",                       label: "CFB",              img: _SI + "football_american_rugby_sport-01.png"     },
+  { id: "rugby",                     label: "Rugby",            img: _SI + "football_american_rugby_sport-01.png"     },
+  // 賽車（方向盤比安全帽更代表 F1）
+  { id: "f1",                        label: "Formula 1",        img: _SI + "steering_wheel_rally_racing-01.png"       },
   // 格鬥
-  { id: "ufc",                       label: "UFC",             img: _SI + "boxing_glove_gloves_sport-01.png"         },
-  { id: "boxing",                    label: "Boxing",          img: _SI + "boxing_glove_gloves_sport-01.png"         },
+  { id: "ufc",                       label: "UFC",              img: _SI + "boxing_glove_gloves_sport-01.png"         },
+  { id: "boxing",                    label: "Boxing",           img: _SI + "boxing_glove_gloves_sport-01.png"         },
   // 高爾夫
-  { id: "golf",                      label: "Golf",            img: _SI + "golf_green_sport_hole_flag-01.png"        },
+  { id: "golf",                      label: "Golf",             img: _SI + "golf_green_sport_hole_flag-01.png"        },
   // 桌球
-  { id: "table-tennis",              label: "Table Tennis",    img: _SI + "ping_pong_tennis_table-01.png"            },
+  { id: "table-tennis",              label: "Table Tennis",     img: _SI + "ping_pong_tennis_table-01.png"            },
   // 其他
-  { id: "chess",                     label: "♟ Chess",         img: null              },
-  { id: "pickleball",                label: "Pickleball",      img: _SI + "badminton_shuttlecock_game_sport-01.png"  },
-  { id: "lacrosse",                  label: "🥍 Lacrosse",     img: null              },
+  { id: "chess",                     label: "♟ Chess",          img: null                                              },
+  { id: "pickleball",                label: "Pickleball",       img: _SI + "badminton_shuttlecock_game_sport-01.png"  },
+  { id: "lacrosse",                  label: "🥍 Lacrosse",      img: null                                              },
 ];
 
 /** 建立 Sports 聯賽 Tabs（含圖片 icon）*/
