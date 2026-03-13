@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
   <meta http-equiv="Pragma" content="no-cache"/>
   <meta http-equiv="Expires" content="0"/>
-  <link rel="stylesheet" href="styles.css?v=9" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <style>
     /* ── 核心修復：防止 feed-area 被 tabs 撐破 grid ── */
     .content-grid {
@@ -90,6 +90,12 @@
           </svg>
           Sports
         </a>
+        <a href="#" class="nav-item" id="nav-portfolio">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-1px">
+            <path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Portfolio
+        </a>
       </nav>
 
       <!-- 搜尋欄 -->
@@ -166,6 +172,67 @@
           <div class="markets-list" id="markets-list"></div>
         </div>
 
+        <!-- ══ PORTFOLIO 視圖 ══ -->
+        <div id="view-portfolio" style="display:none">
+
+          <!-- 標題列 -->
+          <div class="port-header">
+            <div class="port-title-wrap">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              </svg>
+              <h2 class="port-title">My Portfolio</h2>
+              <span class="demo-badge">Demo Mode</span>
+            </div>
+          </div>
+
+          <!-- 統計卡片 -->
+          <div class="port-stats-grid" id="portfolio-stats"></div>
+
+          <!-- 資金曲線 -->
+          <div class="port-section">
+            <div class="port-section-header">
+              <h3 class="port-section-title">Equity Curve</h3>
+              <div class="equity-range-btns">
+                <button class="equity-range-btn" data-range="1W">1W</button>
+                <button class="equity-range-btn active" data-range="1M">1M</button>
+                <button class="equity-range-btn" data-range="3M">3M</button>
+                <button class="equity-range-btn" data-range="All">All</button>
+              </div>
+            </div>
+            <div id="equity-chart-wrap" class="equity-chart-wrap"></div>
+          </div>
+
+          <!-- 盈虧日曆 -->
+          <div class="port-section">
+            <div class="port-section-header">
+              <h3 class="port-section-title">P&amp;L Calendar</h3>
+              <div class="cal-legend-wrap">
+                <span class="cal-legend-label">Loss</span>
+                <div class="cal-legend-cell" style="background:#991b1b"></div>
+                <div class="cal-legend-cell" style="background:#dc2626"></div>
+                <div class="cal-legend-cell" style="background:#f87171"></div>
+                <div class="cal-legend-cell" style="background:var(--border)"></div>
+                <div class="cal-legend-cell" style="background:#4ade80"></div>
+                <div class="cal-legend-cell" style="background:#16a34a"></div>
+                <div class="cal-legend-cell" style="background:#15803d"></div>
+                <span class="cal-legend-label">Profit</span>
+              </div>
+            </div>
+            <div id="pnl-calendar"></div>
+          </div>
+
+          <!-- 持倉列表 -->
+          <div class="port-section">
+            <div class="port-section-header">
+              <h3 class="port-section-title">Open Positions</h3>
+              <span class="pos-count-badge" id="pos-count-badge">6 open</span>
+            </div>
+            <div id="positions-table"></div>
+          </div>
+
+        </div>
+
         <!-- ══ SPORTS 視圖 ══ -->
         <div id="view-sports" style="display:none">
           <!-- 標題列 -->
@@ -233,6 +300,6 @@
     </div>
   </main>
 
-  <script src="app.js?v=13"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>

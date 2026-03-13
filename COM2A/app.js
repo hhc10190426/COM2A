@@ -1691,41 +1691,380 @@ function initSportsFilters() {
 // ===== 視圖切換（Events / Sports）=====
 let currentView = "events";
 let sportsLoaded = false;
+let portfolioLoaded = false;
 
 function switchView(view) {
   currentView = view;
-  const evView     = document.getElementById("view-events");
-  const spView     = document.getElementById("view-sports");
-  const navEvents  = document.getElementById("nav-events");
-  const navSports  = document.getElementById("nav-sports");
+  ["view-events", "view-sports", "view-portfolio"].forEach((id) =>
+    document.getElementById(id)?.style.setProperty("display", "none")
+  );
+  ["nav-events", "nav-sports", "nav-portfolio"].forEach((id) =>
+    document.getElementById(id)?.classList.remove("active")
+  );
 
   if (view === "sports") {
-    evView?.style.setProperty("display", "none");
-    spView?.style.setProperty("display", "block");
-    navEvents?.classList.remove("active");
-    navSports?.classList.add("active");
-
-    if (!sportsLoaded) {
-      sportsLoaded = true;
-      loadSportsView();
-    }
+    document.getElementById("view-sports")?.style.setProperty("display", "block");
+    document.getElementById("nav-sports")?.classList.add("active");
+    if (!sportsLoaded) { sportsLoaded = true; loadSportsView(); }
+  } else if (view === "portfolio") {
+    document.getElementById("view-portfolio")?.style.setProperty("display", "block");
+    document.getElementById("nav-portfolio")?.classList.add("active");
+    if (!portfolioLoaded) { portfolioLoaded = true; renderPortfolioView(); }
   } else {
-    evView?.style.setProperty("display", "block");
-    spView?.style.setProperty("display", "none");
-    navSports?.classList.remove("active");
-    navEvents?.classList.add("active");
+    document.getElementById("view-events")?.style.setProperty("display", "block");
+    document.getElementById("nav-events")?.classList.add("active");
   }
 }
 
 function initNavigation() {
-  document.getElementById("nav-events")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    switchView("events");
+  ["events", "sports", "portfolio"].forEach((view) => {
+    document.getElementById(`nav-${view}`)?.addEventListener("click", (e) => {
+      e.preventDefault();
+      switchView(view);
+    });
   });
-  document.getElementById("nav-sports")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    switchView("sports");
+}
+
+// ===== Portfolio Dashboard =====
+
+/** 確定性偽亂數（seed 固定，確保每次重整數據一致）*/
+function _pRand(seed) {
+  let s = seed;
+  return () => { s = (s * 16807 + 0) % 2147483647; return (s - 1) / 2147483646; };
+}
+
+/** 生成 365 天資金曲線 */
+const EQUITY_DATA = (() => {
+  const r = _pRand(7777);
+  const arr = [];
+  let v = 8500;
+  const now = Date.now();
+  for (let i = 364; i >= 0; i--) {
+    v = Math.max(4800, v * (1 + (r() - 0.43) * 0.045));
+    arr.push({ date: new Date(now - i * 86400000), value: Math.round(v * 100) / 100 });
+  }
+  return arr;
+})();
+
+/** 從資金曲線計算每日 P&L */
+const DAILY_PNL = (() => {
+  const map = {};
+  EQUITY_DATA.forEach((d, i) => {
+    if (!i) return;
+    map[d.date.toISOString().slice(0, 10)] =
+      +(d.value - EQUITY_DATA[i - 1].value).toFixed(2);
   });
+  return map;
+})();
+
+/** 持倉資料 */
+const OPEN_POSITIONS = [
+  { market: "Will Trump sign AI executive order?",    side: "YES", shares: 250, avgEntry: 0.71, current: 0.78, endDate: "Apr 30" },
+  { market: "EPL Winner 2024/25: Arsenal",            side: "YES", shares: 180, avgEntry: 0.22, current: 0.31, endDate: "May 18" },
+  { market: "Fed rate cut in Q2 2025?",               side: "NO",  shares: 120, avgEntry: 0.58, current: 0.49, endDate: "Jul 1"  },
+  { market: "NBA Champion: OKC Thunder",              side: "YES", shares: 300, avgEntry: 0.35, current: 0.41, endDate: "Jun 30" },
+  { market: "F1 Driver Champion: George Russell",     side: "YES", shares: 200, avgEntry: 0.48, current: 0.54, endDate: "Dec 1"  },
+  { market: "BTC reaches $120K before July 2025?",   side: "YES", shares: 150, avgEntry: 0.29, current: 0.21, endDate: "Jul 1"  },
+];
+
+/** 計算投資組合統計 */
+const PORT_STATS = (() => {
+  const total = EQUITY_DATA.at(-1).value;
+  const start = EQUITY_DATA[0].value;
+  const gain  = total - start;
+  const unrealized = OPEN_POSITIONS.reduce((s, p) => s + p.shares * (p.current - p.avgEntry), 0);
+  const realized   = gain - unrealized;
+  const posValue   = OPEN_POSITIONS.reduce((s, p) => s + p.shares * p.current, 0);
+  return {
+    total:      +total.toFixed(2),
+    balance:    +Math.max(0, total - posValue).toFixed(2),
+    unrealized: +unrealized.toFixed(2),
+    realized:   +realized.toFixed(2),
+  };
+})();
+
+let equityRange = "1M";
+let _eqState = null; // 給 hover handler 用
+
+/** 渲染統計卡片 */
+function renderPortfolioStats() {
+  const el = document.getElementById("portfolio-stats");
+  if (!el) return;
+  const s = PORT_STATS;
+  const totalGain = s.total - EQUITY_DATA[0].value;
+  const gainPct   = ((totalGain / EQUITY_DATA[0].value) * 100).toFixed(2);
+
+  const card = (label, val, sub, dir) => `
+    <div class="port-stat-card">
+      <div class="port-stat-label">${label}</div>
+      <div class="port-stat-value">${val}</div>
+      ${sub ? `<div class="port-stat-sub ${dir === 1 ? "up" : dir === -1 ? "down" : ""}">${sub}</div>` : ""}
+    </div>`;
+
+  el.innerHTML = [
+    card("Total Assets",     fmtUSD(s.total),
+      `${totalGain >= 0 ? "+" : ""}${fmtUSD(totalGain)} (${totalGain >= 0 ? "+" : ""}${gainPct}%) all time`,
+      totalGain >= 0 ? 1 : -1),
+    card("Available Balance", fmtUSD(s.balance), "Ready to trade"),
+    card("Unrealized P&L",   `${s.unrealized >= 0 ? "+" : ""}${fmtUSD(s.unrealized)}`,
+      "From open positions", s.unrealized >= 0 ? 1 : -1),
+    card("Realized P&L",     `${s.realized >= 0 ? "+" : ""}${fmtUSD(s.realized)}`,
+      "Settled trades", s.realized >= 0 ? 1 : -1),
+  ].join("");
+}
+
+/** 渲染資金曲線（SVG + 互動 hover）*/
+function renderEquityChart() {
+  const container = document.getElementById("equity-chart-wrap");
+  if (!container) return;
+
+  const DAYS = { "1W": 7, "1M": 30, "3M": 90, "All": 365 };
+  const slice = EQUITY_DATA.slice(-(DAYS[equityRange] ?? 30));
+  const W = 800, H = 210;
+  const P = { t: 18, r: 12, b: 32, l: 62 };
+  const CW = W - P.l - P.r, CH = H - P.t - P.b;
+
+  const vals = slice.map((d) => d.value);
+  const minV = Math.min(...vals), maxV = Math.max(...vals);
+  const vR = maxV - minV || 1;
+  const isUp = vals.at(-1) >= vals[0];
+  const color = isUp ? "#22c55e" : "#ef4444";
+
+  const xS = (i) => P.l + (i / (slice.length - 1)) * CW;
+  const yS = (v) => P.t + (1 - (v - minV) / vR) * CH;
+
+  const pts = slice.map((d, i) => `${xS(i).toFixed(1)},${yS(d.value).toFixed(1)}`).join(" ");
+  const close = `${xS(slice.length - 1).toFixed(1)},${H - P.b} ${P.l},${H - P.b}`;
+
+  const yTicks = [0, 1, 2, 3, 4].map((i) => ({
+    v: minV + (vR * i) / 4,
+    y: yS(minV + (vR * i) / 4),
+  }));
+  const step = Math.max(1, Math.floor(slice.length / 4));
+  const xIdxs = [...new Set([0, step, step * 2, step * 3, slice.length - 1])].filter((i) => i < slice.length);
+
+  const changeAbs = vals.at(-1) - vals[0];
+  const changePct = ((changeAbs / vals[0]) * 100).toFixed(2);
+  const sign = changeAbs >= 0 ? "+" : "";
+
+  _eqState = { slice, W, H, P, CW, CH, minV, vR, color };
+
+  container.innerHTML = `
+    <div class="equity-change-badge ${isUp ? "up" : "down"}">
+      ${sign}${fmtUSD(changeAbs)} <span class="eq-pct">${sign}${changePct}%</span>
+    </div>
+    <div class="equity-svg-wrap" style="position:relative">
+      <svg id="equity-svg" viewBox="0 0 ${W} ${H}" width="100%" height="${H}"
+           preserveAspectRatio="none" style="display:block;overflow:visible">
+        <defs>
+          <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${color}" stop-opacity="0.28"/>
+            <stop offset="100%" stop-color="${color}" stop-opacity="0.02"/>
+          </linearGradient>
+        </defs>
+        ${yTicks.map((t) => `
+          <line x1="${P.l}" y1="${t.y.toFixed(1)}" x2="${W - P.r}" y2="${t.y.toFixed(1)}"
+                stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+          <text x="${P.l - 6}" y="${(t.y + 4).toFixed(1)}" fill="rgba(255,255,255,0.32)"
+                font-size="10" text-anchor="end">${fmtUSD(t.v)}</text>`).join("")}
+        ${xIdxs.map((i) => `
+          <text x="${xS(i).toFixed(1)}" y="${H - 6}" fill="rgba(255,255,255,0.32)"
+                font-size="10" text-anchor="middle">
+            ${slice[i].date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+          </text>`).join("")}
+        <polygon points="${pts} ${close}" fill="url(#eqGrad)"/>
+        <polyline points="${pts}" fill="none" stroke="${color}"
+                  stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        <line id="eq-vline" x1="0" y1="${P.t}" x2="0" y2="${H - P.b}"
+              stroke="rgba(255,255,255,0.35)" stroke-width="1" stroke-dasharray="3,2" display="none"/>
+        <circle id="eq-dot" r="4.5" fill="${color}" stroke="#0f172a" stroke-width="2" display="none"/>
+        <rect id="eq-overlay" x="${P.l}" y="${P.t}" width="${CW}" height="${CH}"
+              fill="transparent" style="cursor:crosshair"/>
+      </svg>
+      <div id="eq-tooltip" class="equity-tooltip" style="display:none"></div>
+    </div>`;
+
+  const svg     = document.getElementById("equity-svg");
+  const overlay = document.getElementById("eq-overlay");
+  overlay?.addEventListener("mousemove", (e) => handleEquityHover(e, svg));
+  overlay?.addEventListener("mouseleave", hideEquityTooltip);
+}
+
+function handleEquityHover(e, svg) {
+  if (!_eqState) return;
+  const { slice, W, P, CW, CH, minV, vR, color } = _eqState;
+
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  const sp = pt.matrixTransform(svg.getScreenCTM().inverse());
+
+  const idx = Math.max(0, Math.min(slice.length - 1,
+    Math.round(((sp.x - P.l) / CW) * (slice.length - 1))));
+  const d = slice[idx];
+  const px = P.l + (idx / (slice.length - 1)) * CW;
+  const py = P.t + (1 - (d.value - minV) / vR) * CH;
+
+  const vline = document.getElementById("eq-vline");
+  const dot   = document.getElementById("eq-dot");
+  const tip   = document.getElementById("eq-tooltip");
+
+  if (vline) { vline.setAttribute("x1", px); vline.setAttribute("x2", px); vline.removeAttribute("display"); }
+  if (dot)   { dot.setAttribute("cx", px); dot.setAttribute("cy", py); dot.removeAttribute("display"); }
+  if (tip) {
+    const dateStr = d.date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    tip.textContent = `${dateStr}  ·  ${fmtUSD(d.value)}`;
+    tip.style.display = "";
+    const wrap = document.querySelector(".equity-svg-wrap");
+    if (wrap) {
+      const wr = wrap.getBoundingClientRect();
+      const leftPx = ((px - P.l) / CW) * (wr.width - P.l - P.r) + P.l;
+      tip.style.left = `${Math.min(leftPx, wr.width - 155)}px`;
+    }
+  }
+}
+
+function hideEquityTooltip() {
+  document.getElementById("eq-vline")?.setAttribute("display", "none");
+  document.getElementById("eq-dot")?.setAttribute("display", "none");
+  const tip = document.getElementById("eq-tooltip");
+  if (tip) tip.style.display = "none";
+}
+
+/** 渲染 P&L 熱力日曆（GitHub 風格）*/
+function renderPnLCalendar() {
+  const container = document.getElementById("pnl-calendar");
+  if (!container) return;
+
+  const today = new Date();
+  today.setHours(23, 59, 59, 0);
+
+  // 從 52 周前的週日開始
+  const start = new Date(today);
+  start.setDate(start.getDate() - 364 - start.getDay());
+  start.setHours(0, 0, 0, 0);
+
+  // 建立 52 周陣列
+  const weeks = [];
+  const cur = new Date(start);
+  while (cur <= today) {
+    const wk = [];
+    for (let d = 0; d < 7; d++) {
+      const key = cur.toISOString().slice(0, 10);
+      const isFuture = cur > today;
+      wk.push({ date: new Date(cur), key, pnl: isFuture ? null : (DAILY_PNL[key] ?? null) });
+      cur.setDate(cur.getDate() + 1);
+    }
+    weeks.push(wk);
+  }
+
+  function cellColor(pnl) {
+    if (pnl === null) return "var(--border)";
+    if (pnl >= 400)  return "#14532d";
+    if (pnl >= 150)  return "#15803d";
+    if (pnl >= 50)   return "#16a34a";
+    if (pnl > 0)     return "#4ade80";
+    if (pnl === 0)   return "var(--border)";
+    if (pnl >= -50)  return "#fca5a5";
+    if (pnl >= -150) return "#f87171";
+    if (pnl >= -400) return "#dc2626";
+    return "#991b1b";
+  }
+
+  // 月份標籤（在對應週欄上方顯示月份名）
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const monthAt = {};
+  weeks.forEach((wk, wi) => {
+    const d = wk[0];
+    if (d && d.date.getDate() <= 7) {
+      const m = d.date.getMonth();
+      if (monthAt[m] === undefined) monthAt[m] = wi;
+    }
+  });
+
+  const DAYS = ["", "Mon", "", "Wed", "", "Fri", ""];
+
+  container.innerHTML = `
+    <div class="cal-outer">
+      <div class="cal-day-labels">
+        ${DAYS.map((l) => `<div class="cal-day-lbl">${l}</div>`).join("")}
+      </div>
+      <div class="cal-scroll-area">
+        <div class="cal-month-strip">
+          ${weeks.map((_, wi) => {
+            const entry = Object.entries(monthAt).find(([, col]) => +col === wi);
+            return `<div class="cal-month-slot">${entry ? MONTHS[+entry[0]] : ""}</div>`;
+          }).join("")}
+        </div>
+        <div class="cal-grid-body">
+          ${weeks.map((wk) => `
+            <div class="cal-week-col">
+              ${wk.map((day) => `
+                <div class="cal-cell" style="background:${cellColor(day.pnl)}"
+                  title="${day.key}: ${day.pnl !== null
+                    ? (day.pnl >= 0 ? "+" : "") + fmtUSD(day.pnl)
+                    : "No trades"}">
+                </div>`).join("")}
+            </div>`).join("")}
+        </div>
+      </div>
+    </div>`;
+}
+
+/** 渲染持倉表 */
+function renderPositionsTable() {
+  const el = document.getElementById("positions-table");
+  if (!el) return;
+
+  const rows = OPEN_POSITIONS.map((p) => {
+    const pnl    = p.shares * (p.current - p.avgEntry);
+    const pnlPct = (((p.current - p.avgEntry) / p.avgEntry) * 100).toFixed(1);
+    const isUp   = pnl >= 0;
+    return `
+      <tr class="pos-row">
+        <td class="pos-market">${p.market}</td>
+        <td><span class="pos-side ${p.side === "YES" ? "yes" : "no"}">${p.side}</span></td>
+        <td class="pos-num">${p.shares}</td>
+        <td class="pos-num">${(p.avgEntry * 100).toFixed(0)}¢</td>
+        <td class="pos-num">${(p.current * 100).toFixed(0)}¢</td>
+        <td class="pos-num ${isUp ? "profit" : "loss"}">
+          ${isUp ? "+" : ""}${fmtUSD(pnl)}
+          <span class="pos-pct">${isUp ? "+" : ""}${pnlPct}%</span>
+        </td>
+        <td class="pos-end">${p.endDate}</td>
+      </tr>`;
+  });
+
+  el.innerHTML = `
+    <table class="pos-table">
+      <thead>
+        <tr>
+          <th>Market</th><th>Side</th><th>Shares</th>
+          <th>Avg Entry</th><th>Current</th><th>P&L</th><th>Closes</th>
+        </tr>
+      </thead>
+      <tbody>${rows.join("")}</tbody>
+    </table>`;
+}
+
+/** 初始化 Portfolio（Range 按鈕事件）*/
+function initPortfolioView() {
+  document.querySelectorAll(".equity-range-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      equityRange = btn.dataset.range;
+      document.querySelectorAll(".equity-range-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderEquityChart();
+    });
+  });
+}
+
+/** 主入口：渲染整個 Portfolio 頁面 */
+function renderPortfolioView() {
+  initPortfolioView();
+  renderPortfolioStats();
+  renderEquityChart();
+  renderPnLCalendar();
+  renderPositionsTable();
 }
 
 // ===== 初始化 =====
