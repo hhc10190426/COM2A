@@ -1840,7 +1840,7 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
 /* ── Sports 雙欄布局 ── */
 .sports-body {
   display: grid;
-  grid-template-columns: 200px 1fr;
+  grid-template-columns: 190px 1fr;
   gap: 0;
   min-height: 500px;
   margin-top: 8px;
@@ -1850,7 +1850,7 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
 .sports-sidebar {
   border-right: 1px solid var(--border);
   padding-right: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .sports-sidebar-inner {

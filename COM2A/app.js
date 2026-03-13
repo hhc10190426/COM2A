@@ -2232,7 +2232,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initNavigation();
   initSportsFilters();
   initScrollableTabs("category-tabs");
-  initScrollableTabs("sports-league-tabs");
+  // sports-league-tabs 是垂直側欄，不需要滾動箭頭
   loadAll();              // 唯一 Events fetch 入口
 });
 
