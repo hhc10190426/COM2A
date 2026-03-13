@@ -1808,12 +1808,11 @@ function initCryptoFilters() {
     });
   });
 
-  // 幣種篩選按鈕
-  document.getElementById("crypto-asset-tabs")?.querySelectorAll(".crypto-asset-btn").forEach((btn) => {
+  // 幣種篩選按鈕（左側欄）
+  document.getElementById("crypto-asset-tabs")?.querySelectorAll(".sports-cat-parent").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.getElementById("crypto-asset-tabs").querySelectorAll(".crypto-asset-btn").forEach((b) => b.classList.remove("active"));
+      document.getElementById("crypto-asset-tabs").querySelectorAll(".sports-cat-parent").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-      cryptoTime = btn.dataset.asset;
       renderCryptoMarkets();
     });
   });
