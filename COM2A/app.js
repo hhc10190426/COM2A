@@ -484,14 +484,37 @@ function renderNews(news) {
   });
 }
 
+// ===== Skeleton Loading 卡片 =====
+function renderSkeletons(count = 9) {
+  const container = document.getElementById("markets-list");
+  container.style.display = "grid";
+  container.style.gridTemplateColumns = "repeat(3, 1fr)";
+  container.style.gap = "10px";
+  container.innerHTML = Array.from({ length: count }, () => `
+    <div class="skeleton-card">
+      <div class="skeleton-header">
+        <div class="skeleton-icon skel"></div>
+        <div class="skeleton-lines">
+          <div class="skel skel-line" style="width:80%"></div>
+          <div class="skel skel-line" style="width:50%"></div>
+        </div>
+      </div>
+      <div class="skel skel-bar" style="width:100%;height:6px"></div>
+      <div class="skel skel-bar" style="width:90%;height:6px"></div>
+      <div class="skel skel-bar" style="width:75%;height:6px"></div>
+      <div class="skeleton-footer">
+        <div class="skel skel-stat"></div>
+        <div class="skel skel-stat"></div>
+      </div>
+    </div>
+  `).join("");
+}
+
 // ===== 主要載入流程（唯一負責 fetch events 的地方）=====
 async function loadAll() {
-  // 先立即顯示備用資料，讓頁面不空白
-  const fallback = FALLBACK_MARKETS.map((m) => ({ ...m, markets: [m] }));
-  cachedEvents  = fallback;
-  cachedMarkets = FALLBACK_MARKETS;
-  renderMarkets(fallback);
-  buildTabs(fallback);       // 先建立只有 All 的 tab
+  // 先顯示 Skeleton Loading 動畫
+  renderSkeletons(9);
+  buildTabs([]);             // 先建立只有 All 的 tab
   simulateLiveTrades();
   setApiStatus("loading", "連接中...");
 

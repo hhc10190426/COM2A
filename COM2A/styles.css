@@ -1481,6 +1481,78 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   opacity: 1;
 }
 
+/* ===== Skeleton Loading ===== */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+
+.skel {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-card-hover) 25%,
+    rgba(255,255,255,0.06) 50%,
+    var(--bg-card-hover) 75%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+.skeleton-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.skeleton-header {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.skeleton-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.skeleton-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.skel-line {
+  height: 12px;
+  border-radius: 4px;
+}
+
+.skel-bar {
+  border-radius: 3px;
+}
+
+.skeleton-footer {
+  display: flex;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.skel-stat {
+  width: 70px;
+  height: 28px;
+  border-radius: 6px;
+}
+
 /* ===== Scrollbar ===== */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
