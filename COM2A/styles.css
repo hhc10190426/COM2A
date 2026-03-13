@@ -757,6 +757,11 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   background: var(--red);
 }
 
+.status-dot.pending {
+  background: #f97316;
+  animation: pulse 2s infinite;
+}
+
 /* ===== Event Preview Card ===== */
 .outcomes-count-badge {
   font-size: 11px;
@@ -1751,6 +1756,41 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   font-size: 14px;
 }
 .search-empty strong { display: block; color: var(--text-secondary); font-size: 16px; margin-bottom: 6px; }
+
+/* ===== Scrollable Tabs Wrapper ===== */
+.tabs-scroll-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+/* 讓 wrapper 裡的 category-tabs 縮放正常 */
+.tabs-scroll-wrapper .category-tabs {
+  flex: 1;
+  min-width: 0;
+}
+.tabs-arrow {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, opacity 0.2s;
+  padding: 0;
+}
+.tabs-arrow:hover {
+  background: rgba(99,102,241,0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
 
 /* ===== Sports Nav item ===== */
 #nav-sports svg { display: inline-block; vertical-align: -1px; margin-right: 3px; }
