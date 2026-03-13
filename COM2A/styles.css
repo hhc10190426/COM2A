@@ -2029,13 +2029,98 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   color: var(--accent);
 }
 
-/* Sports 視圖的 api-status */
-#sports-api-status {
+/* Sports / Crypto 視圖的 api-status */
+#sports-api-status, #crypto-api-status {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 11px;
   color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ── Crypto 頁面專用 ── */
+
+/* 時間篩選 tabs（頂部橫向） */
+.crypto-time-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 8px 0 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+.crypto-time-tabs::-webkit-scrollbar { display: none; }
+
+.crypto-time-btn {
+  flex-shrink: 0;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.crypto-time-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.crypto-time-btn.active {
+  background: rgba(99,102,241,0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* 類型篩選 + 排序列 */
+.crypto-filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 0 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+
+.crypto-type-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+}
+.crypto-type-tabs::-webkit-scrollbar { display: none; }
+
+.crypto-type-btn {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.crypto-type-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.crypto-type-btn.active {
+  background: rgba(99,102,241,0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.crypto-sort-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex-shrink: 0;
 }
 

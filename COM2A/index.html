@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
   <meta http-equiv="Pragma" content="no-cache"/>
   <meta http-equiv="Expires" content="0"/>
-  <link rel="stylesheet" href="styles.css?v=20" />
+  <link rel="stylesheet" href="styles.css?v=21" />
   <style>
     /* ── 核心修復：防止 feed-area 被 tabs 撐破 grid ── */
     .content-grid {
@@ -84,6 +84,12 @@
 
       <nav class="nav-links">
         <a href="#" class="nav-item active" id="nav-events">Events</a>
+        <a href="#" class="nav-item" id="nav-crypto">
+          <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24" style="vertical-align:-1px">
+            <path d="M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z"/>
+          </svg>
+          Crypto
+        </a>
         <a href="#" class="nav-item" id="nav-sports">
           <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24" style="vertical-align:-1px">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
@@ -222,6 +228,70 @@
 
         </div>
 
+        <!-- ══ CRYPTO 視圖 ══ -->
+        <div id="view-crypto" style="display:none">
+          <!-- 標題列 -->
+          <div class="sports-header-row">
+            <div class="sports-title-wrap">
+              <span class="sports-icon">₿</span>
+              <h2 class="sports-title">Crypto Markets</h2>
+              <span class="platform-live-dot"></span>
+            </div>
+            <div class="api-status" id="crypto-api-status">
+              <span class="status-dot pending"></span>
+              <span id="crypto-status-text">等待數據接入...</span>
+            </div>
+          </div>
+
+          <!-- 時間篩選 tabs -->
+          <div class="crypto-time-tabs" id="crypto-time-tabs">
+            <button class="crypto-time-btn active" data-time="all">All</button>
+            <button class="crypto-time-btn" data-time="5min">5 Min</button>
+            <button class="crypto-time-btn" data-time="15min">15 Min</button>
+            <button class="crypto-time-btn" data-time="1h">1 Hour</button>
+            <button class="crypto-time-btn" data-time="4h">4 Hours</button>
+            <button class="crypto-time-btn" data-time="daily">Daily</button>
+            <button class="crypto-time-btn" data-time="weekly">Weekly</button>
+            <button class="crypto-time-btn" data-time="monthly">Monthly</button>
+            <button class="crypto-time-btn" data-time="yearly">Yearly</button>
+            <button class="crypto-time-btn" data-time="premarket">Pre-Market</button>
+          </div>
+
+          <!-- 左側分類 + 右側市場 -->
+          <div class="sports-body">
+            <!-- 左側垂直分類側欄 -->
+            <div class="sports-sidebar">
+              <div class="sports-sidebar-inner" id="crypto-asset-tabs">
+                <button class="sports-cat-parent active" data-id="all" data-leaf="true">
+                  <span class="scp-icon">⚡</span>
+                  <span class="scp-label">All Crypto</span>
+                </button>
+              </div>
+            </div>
+            <!-- 右側內容 -->
+            <div class="sports-main">
+              <!-- 類型 + 排序列 -->
+              <div class="crypto-filters-bar">
+                <div class="crypto-type-tabs" id="crypto-type-tabs">
+                  <button class="crypto-type-btn active" data-type="all">All</button>
+                  <button class="crypto-type-btn" data-type="updown">Up / Down</button>
+                  <button class="crypto-type-btn" data-type="above">Above / Below</button>
+                  <button class="crypto-type-btn" data-type="range">Price Range</button>
+                  <button class="crypto-type-btn" data-type="hit">Hit Price</button>
+                </div>
+                <div class="crypto-sort-group">
+                  <span class="filter-label">Sort</span>
+                  <button class="sports-filter-btn active" data-order="volume24hr" id="crypto-sort-vol">24h Volume</button>
+                  <button class="sports-filter-btn" data-order="liquidity" id="crypto-sort-liq">Liquidity</button>
+                  <button class="sports-filter-btn" data-order="endDate" id="crypto-sort-end">Ending Soon</button>
+                </div>
+              </div>
+              <!-- 市場列表 -->
+              <div class="markets-list" id="crypto-markets-list"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- ══ SPORTS 視圖 ══ -->
         <div id="view-sports" style="display:none">
           <!-- 標題列 -->
@@ -297,6 +367,6 @@
     </div>
   </main>
 
-  <script src="app.js?v=25"></script>
+  <script src="app.js?v=26"></script>
 </body>
 </html>
