@@ -1840,7 +1840,7 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
 /* ── Sports 雙欄布局 ── */
 .sports-body {
   display: grid;
-  grid-template-columns: 160px 1fr;
+  grid-template-columns: 200px 1fr;
   gap: 0;
   min-height: 500px;
   margin-top: 8px;
@@ -1892,7 +1892,7 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
 .sports-cat-parent.active { color: var(--text-primary); font-weight: 600; }
 
 .scp-icon { font-size: 14px; flex-shrink: 0; }
-.scp-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scp-label { flex: 1; white-space: nowrap; }
 .scp-chevron {
   font-size: 16px;
   line-height: 1;
@@ -1936,8 +1936,6 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .sports-cat-child:hover { background: var(--bg-hover); color: var(--text-primary); }
 .sports-cat-child.active {
