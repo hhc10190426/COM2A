@@ -1751,3 +1751,83 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   font-size: 14px;
 }
 .search-empty strong { display: block; color: var(--text-secondary); font-size: 16px; margin-bottom: 6px; }
+
+/* ===== Sports Nav item ===== */
+#nav-sports svg { display: inline-block; vertical-align: -1px; margin-right: 3px; }
+
+/* ===== Sports View ===== */
+#view-sports { min-width: 0; }
+
+.sports-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.sports-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.sports-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.sports-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* 聯賽 tab 的小計數字徽章 */
+.tab-count {
+  display: inline-block;
+  background: rgba(99,102,241,0.18);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 1px 5px;
+  margin-left: 3px;
+  vertical-align: 1px;
+}
+
+/* 體育排序按鈕（複用 filter-btn 但綁不同 class）*/
+.sports-filter-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.sports-filter-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.sports-filter-btn.active {
+  background: rgba(99,102,241,0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Sports 視圖的 api-status */
+#sports-api-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}

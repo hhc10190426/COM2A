@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
   <meta http-equiv="Pragma" content="no-cache"/>
   <meta http-equiv="Expires" content="0"/>
-  <link rel="stylesheet" href="styles.css?v=8" />
+  <link rel="stylesheet" href="styles.css?v=9" />
   <style>
     /* ── 核心修復：防止 feed-area 被 tabs 撐破 grid ── */
     .content-grid {
@@ -84,7 +84,12 @@
 
       <nav class="nav-links">
         <a href="#" class="nav-item active" id="nav-events">Events</a>
-        <a href="#" class="nav-item" id="nav-markets">Markets</a>
+        <a href="#" class="nav-item" id="nav-sports">
+          <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24" style="vertical-align:-1px">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+          </svg>
+          Sports
+        </a>
       </nav>
 
       <!-- 搜尋欄 -->
@@ -124,47 +129,72 @@
       <!-- 左側主區域 -->
       <div class="feed-area">
 
-        <!-- 平台標示 + 統計 -->
-        <div class="platforms-row">
-          <div class="platform-chip active">
-            <img src="https://app.chance.cc/_next/image?url=%2Flogos%2Fpolymarket.jpeg&w=64&q=75" alt="Polymarket" onerror="this.style.display='none'"/>
-            <span>Polymarket</span>
-            <span class="platform-live-dot"></span>
+        <!-- ══ EVENTS 視圖 ══ -->
+        <div id="view-events">
+          <!-- 平台標示 + 統計 -->
+          <div class="platforms-row">
+            <div class="platform-chip active">
+              <img src="https://app.chance.cc/_next/image?url=%2Flogos%2Fpolymarket.jpeg&w=64&q=75" alt="Polymarket" onerror="this.style.display='none'"/>
+              <span>Polymarket</span>
+              <span class="platform-live-dot"></span>
+            </div>
+            <div class="api-status" id="api-status">
+              <span class="status-dot loading"></span>
+              <span id="api-status-text">連接中...</span>
+            </div>
+            <div class="market-stats-bar" id="market-stats-bar" style="display:none">
+              <span id="stats-count">--</span>
+              <span class="stats-sep">·</span>
+              <span id="stats-vol">--</span>
+            </div>
           </div>
-          <div class="api-status" id="api-status">
-            <span class="status-dot loading"></span>
-            <span id="api-status-text">連接中...</span>
+          <!-- 分類標籤（動態）-->
+          <div class="category-tabs" id="category-tabs">
+            <button class="tab active" data-tag-id="all">All</button>
           </div>
-          <!-- 市場統計 -->
-          <div class="market-stats-bar" id="market-stats-bar" style="display:none">
-            <span id="stats-count">--</span>
-            <span class="stats-sep">·</span>
-            <span id="stats-vol">--</span>
+          <!-- 篩選列 -->
+          <div class="filters-row">
+            <span class="filter-label">Sort</span>
+            <button class="filter-btn active" data-order="volume24hr">24h Volume</button>
+            <button class="filter-btn" data-order="liquidity">Liquidity</button>
+            <button class="filter-btn" data-order="newest">Newest</button>
+            <button class="filter-btn" data-order="endDate">Ending Soon</button>
+            <div style="flex:1"></div>
+            <button class="filter-btn watchlist-toggle" id="watchlist-toggle">★ Watchlist</button>
           </div>
+          <!-- 市場列表 -->
+          <div class="markets-list" id="markets-list"></div>
         </div>
 
-        <!-- 分類標籤（由 JS 動態生成）-->
-        <div class="category-tabs" id="category-tabs">
-          <button class="tab active" data-tag-id="all">All</button>
+        <!-- ══ SPORTS 視圖 ══ -->
+        <div id="view-sports" style="display:none">
+          <!-- 標題列 -->
+          <div class="sports-header-row">
+            <div class="sports-title-wrap">
+              <span class="sports-icon">🏆</span>
+              <h2 class="sports-title">Sports Markets</h2>
+              <span class="platform-live-dot"></span>
+            </div>
+            <div class="api-status" id="sports-api-status">
+              <span class="status-dot loading"></span>
+              <span id="sports-status-text">連接中...</span>
+            </div>
+          </div>
+          <!-- 聯賽 Tabs（動態生成）-->
+          <div class="category-tabs" id="sports-league-tabs">
+            <button class="tab active" data-league="all">All Sports</button>
+          </div>
+          <!-- 排序列 -->
+          <div class="filters-row">
+            <span class="filter-label">Sort</span>
+            <button class="sports-filter-btn active" data-order="volume24hr">24h Volume</button>
+            <button class="sports-filter-btn" data-order="liquidity">Liquidity</button>
+            <button class="sports-filter-btn" data-order="endDate">Ending Soon</button>
+          </div>
+          <!-- 體育市場列表 -->
+          <div class="markets-list" id="sports-markets-list"></div>
         </div>
 
-        <!-- 篩選列 + Watchlist 切換 -->
-        <div class="filters-row">
-          <span class="filter-label">Sort</span>
-          <button class="filter-btn active" data-order="volume24hr">24h Volume</button>
-          <button class="filter-btn" data-order="liquidity">Liquidity</button>
-          <button class="filter-btn" data-order="newest">Newest</button>
-          <button class="filter-btn" data-order="endDate">Ending Soon</button>
-          <div style="flex:1"></div>
-          <button class="filter-btn watchlist-toggle" id="watchlist-toggle" data-active="false">
-            ★ Watchlist
-          </button>
-        </div>
-
-        <!-- 市場列表 -->
-        <div class="markets-list" id="markets-list">
-          <!-- 由 JS 填充 -->
-        </div>
       </div>
 
       <!-- 右側側邊欄 -->
@@ -203,6 +233,6 @@
     </div>
   </main>
 
-  <script src="app.js?v=11"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>

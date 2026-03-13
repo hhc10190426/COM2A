@@ -485,12 +485,8 @@ function renderNews(news) {
 }
 
 // ===== Skeleton Loading 卡片 =====
-function renderSkeletons(count = 9) {
-  const container = document.getElementById("markets-list");
-  container.style.display = "grid";
-  container.style.gridTemplateColumns = "repeat(3, 1fr)";
-  container.style.gap = "10px";
-  container.innerHTML = Array.from({ length: count }, () => `
+function skeletonHTML(count = 9) {
+  return Array.from({ length: count }, () => `
     <div class="skeleton-card">
       <div class="skeleton-header">
         <div class="skeleton-icon skel"></div>
@@ -508,6 +504,14 @@ function renderSkeletons(count = 9) {
       </div>
     </div>
   `).join("");
+}
+
+function renderSkeletons(count = 9) {
+  const container = document.getElementById("markets-list");
+  container.style.display = "grid";
+  container.style.gridTemplateColumns = "repeat(3, 1fr)";
+  container.style.gap = "10px";
+  container.innerHTML = skeletonHTML(count);
 }
 
 // ===== 主要載入流程（唯一負責 fetch events 的地方）=====
@@ -1401,15 +1405,236 @@ function computeTrending(events) {
   trendingIds = new Set(sorted.slice(0, 5).map((ev) => String(ev.id)));
 }
 
+// ===== Sports 頁面 =====
+
+/** Polymarket 各體育聯賽對應的 tag slug 與顯示名稱 */
+const SPORTS_LEAGUES = [
+  { id: "all",        label: "🏆 All Sports" },
+  { id: "epl",        label: "⚽ EPL" },
+  { id: "ucl",        label: "⚽ UCL" },
+  { id: "nba",        label: "🏀 NBA" },
+  { id: "nfl",        label: "🏈 NFL" },
+  { id: "mlb",        label: "⚾ MLB" },
+  { id: "nhl",        label: "🏒 NHL" },
+  { id: "ufc",        label: "🥊 UFC/MMA" },
+  { id: "tennis",     label: "🎾 Tennis" },
+  { id: "golf",       label: "⛳ Golf" },
+  { id: "cricket",    label: "🏏 Cricket" },
+  { id: "formula1",   label: "🏎 F1" },
+];
+
+/** 關鍵字匹配，用於從 event title / tags 判斷聯賽 */
+const SPORTS_LEAGUE_PATTERNS = {
+  epl:      /premier league|epl|\bla liga\b|\bbundesliga\b|\bserie a\b|\bligue 1\b/i,
+  ucl:      /champions league|ucl|uefa/i,
+  nba:      /\bnba\b/i,
+  nfl:      /\bnfl\b|super bowl/i,
+  mlb:      /\bmlb\b|world series/i,
+  nhl:      /\bnhl\b|stanley cup/i,
+  ufc:      /\bufc\b|\bmma\b/i,
+  tennis:   /tennis|wimbledon|us open|french open|australian open|atp|wta/i,
+  golf:     /golf|masters|pga|lpga/i,
+  cricket:  /cricket|\bipl\b|\bicc\b/i,
+  formula1: /formula 1|formula1|f1|grand prix/i,
+};
+
+let cachedSportsEvents = [];
+let sportsOrder = "volume24hr";
+let sportsLeague = "all";
+
+/** 判斷一個 event 屬於哪個聯賽（回傳 league id 陣列）*/
+function detectLeagues(ev) {
+  const text = [
+    ev.title || "",
+    ev.description || "",
+    ...(ev.tags || []).map((t) => t.label || t.slug || ""),
+  ].join(" ");
+  return Object.entries(SPORTS_LEAGUE_PATTERNS)
+    .filter(([, rx]) => rx.test(text))
+    .map(([id]) => id);
+}
+
+/** 從 Polymarket 抓體育類事件（tag=sports） */
+async function fetchSportsEvents() {
+  const url = `${GAMMA_API}/events?tag=sports&active=true&closed=false&limit=100&order=volume24hr&ascending=false`;
+  const data = await apiFetch(url, "events_sports");
+  return Array.isArray(data) ? data : (data?.data || []);
+}
+
+/** 設定 Sports API 狀態 */
+function setSportsStatus(state, text) {
+  const dot   = document.querySelector("#sports-api-status .status-dot");
+  const label = document.getElementById("sports-status-text");
+  if (dot) dot.className = "status-dot " + state;
+  if (label) label.textContent = text;
+}
+
+/** 建立聯賽 Tabs（只顯示有資料的聯賽）*/
+function buildSportsLeagueTabs(events) {
+  const container = document.getElementById("sports-league-tabs");
+  if (!container) return;
+
+  // 計算每個 league 有多少事件
+  const counts = {};
+  events.forEach((ev) => {
+    const found = detectLeagues(ev);
+    (found.length ? found : ["other"]).forEach((id) => {
+      counts[id] = (counts[id] || 0) + 1;
+    });
+  });
+
+  const tabs = SPORTS_LEAGUES.filter(
+    (l) => l.id === "all" || counts[l.id]
+  );
+
+  container.innerHTML = tabs.map((l) => {
+    const cnt = l.id === "all" ? events.length : (counts[l.id] || 0);
+    const active = l.id === sportsLeague ? " active" : "";
+    return `<button class="tab${active}" data-league="${l.id}">${l.label} <span class="tab-count">${cnt}</span></button>`;
+  }).join("");
+
+  container.querySelectorAll(".tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      sportsLeague = btn.dataset.league;
+      container.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+      btn.classList.add("active");
+      renderSportsMarkets();
+    });
+  });
+}
+
+/** 篩選 + 排序後渲染體育市場列表 */
+function renderSportsMarkets() {
+  const container = document.getElementById("sports-markets-list");
+  if (!container) return;
+
+  let events = cachedSportsEvents;
+  if (sportsLeague !== "all") {
+    events = events.filter((ev) => detectLeagues(ev).includes(sportsLeague));
+  }
+
+  // 排序
+  events = sortEvents(events, sportsOrder);
+
+  container.innerHTML = "";
+  container.style.display = "grid";
+  container.style.gridTemplateColumns = "repeat(3, 1fr)";
+  container.style.gap = "10px";
+
+  if (events.length === 0) {
+    container.innerHTML = `<div class="empty-state" style="grid-column:1/-1">No sports markets found for this league.</div>`;
+    return;
+  }
+
+  events.forEach((ev) => {
+    const card = document.createElement("div");
+    card.className = "market-card";
+    card.style.minWidth = "0";
+    card.style.overflow = "hidden";
+    const markets = ev.markets || [];
+    if (markets.length > 1) renderEventCard(card, ev);
+    else renderBinaryCard(card, markets[0] || ev, ev);
+    container.appendChild(card);
+  });
+}
+
+/** 載入並初始化 Sports 視圖 */
+async function loadSportsView() {
+  setSportsStatus("loading", "連接中...");
+  const list = document.getElementById("sports-markets-list");
+  if (list) {
+    // 先渲染 skeleton
+    list.style.display = "grid";
+    list.style.gridTemplateColumns = "repeat(3, 1fr)";
+    list.style.gap = "10px";
+    list.innerHTML = skeletonHTML(9);
+  }
+
+  try {
+    const events = await fetchSportsEvents();
+    if (events.length === 0) throw new Error("empty");
+    cachedSportsEvents = events;
+    setSportsStatus("live", `即時數據 · ${events.length} markets`);
+    buildSportsLeagueTabs(events);
+    renderSportsMarkets();
+  } catch (err) {
+    console.warn("[Sports] fetchSportsEvents failed:", err);
+    // 備援：從主頁已快取的事件中，以關鍵字篩選體育類
+    const fallback = cachedEvents.filter((ev) => {
+      const text = (ev.title || "") + " " + (ev.tags || []).map((t) => t.label || "").join(" ");
+      return /sports|epl|nba|nfl|ucl|ufc|tennis|golf|cricket|formula|soccer|football|basketball/i.test(text);
+    });
+    cachedSportsEvents = fallback;
+    setSportsStatus(fallback.length ? "simulated" : "error",
+      fallback.length ? `備用數據 · ${fallback.length} markets` : "無法載入");
+    buildSportsLeagueTabs(fallback);
+    renderSportsMarkets();
+  }
+}
+
+/** 體育篩選排序按鈕 */
+function initSportsFilters() {
+  document.querySelectorAll(".sports-filter-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".sports-filter-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      sportsOrder = btn.dataset.order;
+      renderSportsMarkets();
+    });
+  });
+}
+
+// ===== 視圖切換（Events / Sports）=====
+let currentView = "events";
+let sportsLoaded = false;
+
+function switchView(view) {
+  currentView = view;
+  const evView     = document.getElementById("view-events");
+  const spView     = document.getElementById("view-sports");
+  const navEvents  = document.getElementById("nav-events");
+  const navSports  = document.getElementById("nav-sports");
+
+  if (view === "sports") {
+    evView?.style.setProperty("display", "none");
+    spView?.style.setProperty("display", "block");
+    navEvents?.classList.remove("active");
+    navSports?.classList.add("active");
+
+    if (!sportsLoaded) {
+      sportsLoaded = true;
+      loadSportsView();
+    }
+  } else {
+    evView?.style.setProperty("display", "block");
+    spView?.style.setProperty("display", "none");
+    navSports?.classList.remove("active");
+    navEvents?.classList.add("active");
+  }
+}
+
+function initNavigation() {
+  document.getElementById("nav-events")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    switchView("events");
+  });
+  document.getElementById("nav-sports")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    switchView("sports");
+  });
+}
+
 // ===== 初始化 =====
 document.addEventListener("DOMContentLoaded", () => {
   initModal();
   renderNews(NEWS_DATA);
-  initFilters();          // 純 DOM 事件，不需要等資料
+  initFilters();
   initSearch();
   initWatchlistToggle();
   updateWatchlistBadge();
   renderTopTraders();
   startTradePolling();
-  loadAll();              // 唯一 fetch 入口（含 buildTabs + renderMarkets）
+  initNavigation();
+  initSportsFilters();
+  loadAll();              // 唯一 Events fetch 入口
 });
