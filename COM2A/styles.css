@@ -1832,6 +1832,11 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   flex-shrink: 0;
 }
 
+/* Portfolio 模式：全寬，覆蓋 inline !important grid */
+.content-grid.portfolio-mode {
+  grid-template-columns: 1fr !important;
+}
+
 /* ===== Portfolio Dashboard ===== */
 
 /* Header */

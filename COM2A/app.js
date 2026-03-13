@@ -1702,6 +1702,17 @@ function switchView(view) {
     document.getElementById(id)?.classList.remove("active")
   );
 
+  // Portfolio 全寬（隱藏側邊欄）
+  const grid    = document.querySelector(".content-grid");
+  const sidebar = document.querySelector(".sidebar");
+  if (view === "portfolio") {
+    grid?.classList.add("portfolio-mode");
+    if (sidebar) sidebar.style.display = "none";
+  } else {
+    grid?.classList.remove("portfolio-mode");
+    if (sidebar) sidebar.style.display = "";
+  }
+
   if (view === "sports") {
     document.getElementById("view-sports")?.style.setProperty("display", "block");
     document.getElementById("nav-sports")?.classList.add("active");
