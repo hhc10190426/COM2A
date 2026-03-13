@@ -1931,83 +1931,130 @@ function hideEquityTooltip() {
 }
 
 /** 渲染 P&L 熱力日曆（GitHub 風格）*/
+// 月曆當前顯示月份
+let calMonth = new Date().getMonth();
+let calYear  = new Date().getFullYear();
+
+/** 月曆：每月一頁，每格顯示金額，可前後切換 */
 function renderPnLCalendar() {
   const container = document.getElementById("pnl-calendar");
   if (!container) return;
 
-  const today = new Date();
-  today.setHours(23, 59, 59, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
 
-  // 從 52 周前的週日開始
-  const start = new Date(today);
-  start.setDate(start.getDate() - 364 - start.getDay());
-  start.setHours(0, 0, 0, 0);
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const startDow    = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
 
-  // 建立 52 周陣列
-  const weeks = [];
-  const cur = new Date(start);
-  while (cur <= today) {
-    const wk = [];
-    for (let d = 0; d < 7; d++) {
-      const key = cur.toISOString().slice(0, 10);
-      const isFuture = cur > today;
-      wk.push({ date: new Date(cur), key, pnl: isFuture ? null : (DAILY_PNL[key] ?? null) });
-      cur.setDate(cur.getDate() + 1);
-    }
-    weeks.push(wk);
+  const MONTH_NAMES = ["January","February","March","April","May","June",
+                       "July","August","September","October","November","December"];
+  const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+  // 建立單元格陣列（null = 空白佔位）
+  const cells = [];
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date    = new Date(calYear, calMonth, d);
+    const key     = date.toISOString().slice(0, 10);
+    const future  = date > now;
+    const isToday = date.getTime() === now.getTime();
+    cells.push({ day: d, key, pnl: future ? null : (DAILY_PNL[key] ?? null), future, isToday });
+  }
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  // 背景色
+  function bgColor(pnl) {
+    if (pnl == null) return "transparent";
+    if (pnl >  400)  return "rgba(21,128,61,0.55)";
+    if (pnl >  100)  return "rgba(22,163,74,0.42)";
+    if (pnl >  0)    return "rgba(74,222,128,0.18)";
+    if (pnl === 0)   return "transparent";
+    if (pnl > -100)  return "rgba(239,68,68,0.18)";
+    if (pnl > -400)  return "rgba(220,38,38,0.38)";
+    return "rgba(153,27,27,0.55)";
+  }
+  function textColor(pnl) {
+    if (pnl == null || pnl === 0) return "var(--text-muted)";
+    return pnl > 0 ? "#4ade80" : "#f87171";
   }
 
-  function cellColor(pnl) {
-    if (pnl === null) return "var(--border)";
-    if (pnl >= 400)  return "#14532d";
-    if (pnl >= 150)  return "#15803d";
-    if (pnl >= 50)   return "#16a34a";
-    if (pnl > 0)     return "#4ade80";
-    if (pnl === 0)   return "var(--border)";
-    if (pnl >= -50)  return "#fca5a5";
-    if (pnl >= -150) return "#f87171";
-    if (pnl >= -400) return "#dc2626";
-    return "#991b1b";
-  }
+  // 當月統計
+  const tradedDays = cells.filter((c) => c && !c.future && c.pnl !== null);
+  const monthTotal = tradedDays.reduce((s, c) => s + c.pnl, 0);
+  const winDays    = tradedDays.filter((c) => c.pnl > 0).length;
+  const loseDays   = tradedDays.filter((c) => c.pnl < 0).length;
+  const bestDay    = tradedDays.reduce((b, c) => (c.pnl > (b?.pnl ?? -Infinity) ? c : b), null);
+  const worstDay   = tradedDays.reduce((w, c) => (c.pnl < (w?.pnl ?? Infinity) ? c : w), null);
+  const winRate    = tradedDays.length ? Math.round((winDays / tradedDays.length) * 100) : 0;
 
-  // 月份標籤（在對應週欄上方顯示月份名）
-  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const monthAt = {};
-  weeks.forEach((wk, wi) => {
-    const d = wk[0];
-    if (d && d.date.getDate() <= 7) {
-      const m = d.date.getMonth();
-      if (monthAt[m] === undefined) monthAt[m] = wi;
-    }
-  });
-
-  const DAYS = ["", "Mon", "", "Wed", "", "Fri", ""];
+  // 邊界：不能超過本月，不能超過一年前
+  const isCurrentMonth = calYear === now.getFullYear() && calMonth === now.getMonth();
+  const minDate = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+  const isMinMonth = new Date(calYear, calMonth, 1) <= minDate;
 
   container.innerHTML = `
-    <div class="cal-outer">
-      <div class="cal-day-labels">
-        ${DAYS.map((l) => `<div class="cal-day-lbl">${l}</div>`).join("")}
+    <div class="cal-mnav">
+      <button class="cal-mnav-btn" id="cal-prev-btn" ${isMinMonth ? "disabled" : ""}>‹</button>
+      <span class="cal-mtitle">${MONTH_NAMES[calMonth]} ${calYear}</span>
+      <button class="cal-mnav-btn" id="cal-next-btn" ${isCurrentMonth ? "disabled" : ""}>›</button>
+    </div>
+
+    <div class="cal-stats-bar">
+      <div class="cal-mstat">
+        <span class="cal-mstat-label">Monthly P&L</span>
+        <span class="cal-mstat-val ${monthTotal >= 0 ? "up" : "down"}">
+          ${monthTotal >= 0 ? "+" : ""}${fmtUSD(monthTotal)}
+        </span>
       </div>
-      <div class="cal-scroll-area">
-        <div class="cal-month-strip">
-          ${weeks.map((_, wi) => {
-            const entry = Object.entries(monthAt).find(([, col]) => +col === wi);
-            return `<div class="cal-month-slot">${entry ? MONTHS[+entry[0]] : ""}</div>`;
-          }).join("")}
-        </div>
-        <div class="cal-grid-body">
-          ${weeks.map((wk) => `
-            <div class="cal-week-col">
-              ${wk.map((day) => `
-                <div class="cal-cell" style="background:${cellColor(day.pnl)}"
-                  title="${day.key}: ${day.pnl !== null
-                    ? (day.pnl >= 0 ? "+" : "") + fmtUSD(day.pnl)
-                    : "No trades"}">
-                </div>`).join("")}
-            </div>`).join("")}
-        </div>
+      <div class="cal-mstat">
+        <span class="cal-mstat-label">Win Rate</span>
+        <span class="cal-mstat-val">${winRate}%</span>
       </div>
+      <div class="cal-mstat">
+        <span class="cal-mstat-label">Profit Days</span>
+        <span class="cal-mstat-val up">${winDays} days</span>
+      </div>
+      <div class="cal-mstat">
+        <span class="cal-mstat-label">Loss Days</span>
+        <span class="cal-mstat-val down">${loseDays} days</span>
+      </div>
+      ${bestDay ? `<div class="cal-mstat">
+        <span class="cal-mstat-label">Best Day</span>
+        <span class="cal-mstat-val up">+${fmtUSD(bestDay.pnl)}</span>
+      </div>` : ""}
+      ${worstDay ? `<div class="cal-mstat">
+        <span class="cal-mstat-label">Worst Day</span>
+        <span class="cal-mstat-val down">${fmtUSD(worstDay.pnl)}</span>
+      </div>` : ""}
+    </div>
+
+    <div class="cal-mgrid">
+      ${DOW.map((d) => `<div class="cal-mdow">${d}</div>`).join("")}
+      ${cells.map((c) => {
+        if (!c) return `<div class="cal-mcell empty"></div>`;
+        return `
+          <div class="cal-mcell ${c.future ? "future" : ""} ${c.isToday ? "is-today" : ""}"
+               style="background:${bgColor(c.pnl)}">
+            <span class="cal-mday-num ${c.isToday ? "today-num" : ""}">${c.day}</span>
+            ${!c.future ? `<span class="cal-mpnl" style="color:${textColor(c.pnl)}">
+              ${c.pnl !== null ? (c.pnl >= 0 ? "+" : "") + fmtUSD(c.pnl) : ""}
+            </span>` : ""}
+          </div>`;
+      }).join("")}
     </div>`;
+
+  document.getElementById("cal-prev-btn")?.addEventListener("click", () => {
+    calMonth--;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    renderPnLCalendar();
+  });
+  document.getElementById("cal-next-btn")?.addEventListener("click", () => {
+    if (!isCurrentMonth) {
+      calMonth++;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      renderPnLCalendar();
+    }
+  });
 }
 
 /** 渲染持倉表 */
