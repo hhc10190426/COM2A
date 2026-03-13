@@ -1837,6 +1837,164 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   margin: 0;
 }
 
+/* ── Sports 雙欄布局 ── */
+.sports-body {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 0;
+  min-height: 500px;
+  margin-top: 8px;
+}
+
+/* 左側分類側欄 */
+.sports-sidebar {
+  border-right: 1px solid var(--border);
+  padding-right: 0;
+  overflow: hidden;
+}
+
+.sports-sidebar-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 8px 4px 0;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.sports-sidebar-inner::-webkit-scrollbar { width: 4px; }
+.sports-sidebar-inner::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ── 手風琴群組容器 ── */
+.sports-cat-group { display: flex; flex-direction: column; }
+
+/* Parent 按鈕（大類） */
+.sports-cat-parent {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  user-select: none;
+}
+.sports-cat-parent:hover { background: var(--bg-hover); color: var(--text-primary); }
+.sports-cat-parent.active { color: var(--text-primary); font-weight: 600; }
+
+.scp-icon { font-size: 14px; flex-shrink: 0; }
+.scp-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scp-chevron {
+  font-size: 16px;
+  line-height: 1;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  transform: rotate(0deg);
+}
+.sports-cat-group.expanded > .sports-cat-parent .scp-chevron {
+  transform: rotate(90deg);
+}
+
+/* 子項容器（預設收合） */
+.sports-cat-children {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 28px;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+  opacity: 0;
+}
+.sports-cat-group.expanded > .sports-cat-children {
+  max-height: 600px;
+  opacity: 1;
+}
+
+/* 子聯賽按鈕 */
+.sports-cat-child {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sports-cat-child:hover { background: var(--bg-hover); color: var(--text-primary); }
+.sports-cat-child.active {
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* 右側主內容 */
+.sports-main {
+  padding-left: 16px;
+  min-width: 0;
+}
+
+.sports-filters-row {
+  margin-top: 0;
+  padding-top: 4px;
+}
+
+/* 響應式：手機變回頂部 tabs */
+@media (max-width: 768px) {
+  .sports-body {
+    grid-template-columns: 1fr;
+  }
+  .sports-sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding-right: 0;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+  }
+  .sports-sidebar-inner {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-height: none;
+    padding: 4px 0;
+    gap: 4px;
+  }
+  /* 手機版手風琴橫向展開改成平鋪 tabs */
+  .sports-cat-group { flex-direction: row; flex-shrink: 0; }
+  .sports-cat-parent { flex-shrink: 0; width: auto; padding: 6px 12px; }
+  .scp-chevron { display: none; }
+  .sports-cat-children {
+    flex-direction: row;
+    max-height: none !important;
+    opacity: 1 !important;
+    padding-left: 0;
+    gap: 4px;
+  }
+  .sports-cat-child { flex-shrink: 0; width: auto; padding: 6px 12px; }
+  .sports-main {
+    padding-left: 0;
+  }
+}
+
 /* 聯賽 tab 的小計數字徽章 */
 .tab-count {
   display: inline-block;

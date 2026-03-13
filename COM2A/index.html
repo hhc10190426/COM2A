@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
   <meta http-equiv="Pragma" content="no-cache"/>
   <meta http-equiv="Expires" content="0"/>
-  <link rel="stylesheet" href="styles.css?v=16" />
+  <link rel="stylesheet" href="styles.css?v=18" />
   <style>
     /* ── 核心修復：防止 feed-area 被 tabs 撐破 grid ── */
     .content-grid {
@@ -236,19 +236,27 @@
               <span id="sports-status-text">連接中...</span>
             </div>
           </div>
-          <!-- 聯賽 Tabs（動態生成）-->
-          <div class="category-tabs" id="sports-league-tabs">
-            <button class="tab active" data-league="all">All Sports</button>
+          <!-- 左側分類 + 右側市場 -->
+          <div class="sports-body">
+            <!-- 左側垂直分類側欄 -->
+            <div class="sports-sidebar">
+              <div class="sports-sidebar-inner" id="sports-league-tabs">
+                <button class="sports-cat-btn active" data-league="all">⚡ All Sports</button>
+              </div>
+            </div>
+            <!-- 右側內容 -->
+            <div class="sports-main">
+              <!-- 排序列 -->
+              <div class="filters-row sports-filters-row">
+                <span class="filter-label">Sort</span>
+                <button class="sports-filter-btn active" data-order="volume24hr">24h Volume</button>
+                <button class="sports-filter-btn" data-order="liquidity">Liquidity</button>
+                <button class="sports-filter-btn" data-order="endDate">Ending Soon</button>
+              </div>
+              <!-- 體育市場列表 -->
+              <div class="markets-list" id="sports-markets-list"></div>
+            </div>
           </div>
-          <!-- 排序列 -->
-          <div class="filters-row">
-            <span class="filter-label">Sort</span>
-            <button class="sports-filter-btn active" data-order="volume24hr">24h Volume</button>
-            <button class="sports-filter-btn" data-order="liquidity">Liquidity</button>
-            <button class="sports-filter-btn" data-order="endDate">Ending Soon</button>
-          </div>
-          <!-- 體育市場列表 -->
-          <div class="markets-list" id="sports-markets-list"></div>
         </div>
 
       </div>
@@ -289,6 +297,6 @@
     </div>
   </main>
 
-  <script src="app.js?v=22"></script>
+  <script src="app.js?v=24"></script>
 </body>
 </html>

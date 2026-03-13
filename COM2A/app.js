@@ -1540,71 +1540,176 @@ function setSportsStatus(state, text) {
 
 // ===== Polymarket Sports 完整分類（硬編碼，與 polymarket.com/sports 一致）=====
 // 圖片路徑簡寫
-const POLYMARKET_SPORTS = [
-  { id: "all",                       label: "⚡ All Sports"    },
-  { id: "nba",                       label: "🏀 NBA"           },
-  { id: "ncaab",                     label: "🏀 NCAAB"         },
-  { id: "ucl",                       label: "⚽ UCL"           },
-  { id: "epl",                       label: "⚽ EPL"           },
-  { id: "la-liga",                   label: "⚽ La Liga"       },
-  { id: "bundesliga",                label: "⚽ Bundesliga"    },
-  { id: "serie-a",                   label: "⚽ Serie A"       },
-  { id: "ligue-1",                   label: "⚽ Ligue 1"       },
-  { id: "mls",                       label: "⚽ MLS"           },
-  { id: "liga-mx",                   label: "⚽ Liga MX"       },
-  { id: "k-league",                  label: "⚽ K-League"      },
-  { id: "j-league",                  label: "⚽ J. League"     },
-  { id: "saudi-professional-league", label: "⚽ Saudi PL"      },
-  { id: "uef",                       label: "⚽ UEFA Europa"   },
-  { id: "a-league",                  label: "⚽ A-League"      },
-  { id: "eredivisie",                label: "⚽ Eredivisie"    },
-  { id: "primeira-liga",             label: "⚽ Primeira Liga" },
-  { id: "super-lig",                 label: "⚽ Süper Lig"     },
-  { id: "fifa",                      label: "⚽ FIFA"          },
-  { id: "nhl",                       label: "🏒 NHL"           },
-  { id: "esports",                   label: "🎮 Esports"       },
-  { id: "cs2",                       label: "🎮 CS2"           },
-  { id: "league-of-legends",         label: "🎮 LoL"           },
-  { id: "dota-2",                    label: "🎮 Dota 2"        },
-  { id: "valorant",                  label: "🎮 Valorant"      },
-  { id: "tennis",                    label: "🎾 Tennis"        },
-  { id: "atp",                       label: "🎾 ATP"           },
-  { id: "wta",                       label: "🎾 WTA"           },
-  { id: "cricket",                   label: "🏏 Cricket"       },
-  { id: "ipl",                       label: "🏏 IPL"           },
-  { id: "mlb",                       label: "⚾ MLB"           },
-  { id: "kbo",                       label: "⚾ KBO"           },
-  { id: "nfl",                       label: "🏈 NFL"           },
-  { id: "cfb",                       label: "🏈 CFB"           },
-  { id: "rugby",                     label: "🏉 Rugby"         },
-  { id: "f1",                        label: "🏎 Formula 1"     },
-  { id: "ufc",                       label: "🥊 UFC"           },
-  { id: "boxing",                    label: "🥊 Boxing"        },
-  { id: "golf",                      label: "⛳ Golf"           },
-  { id: "table-tennis",              label: "🏓 Table Tennis"  },
-  { id: "chess",                     label: "♟ Chess"          },
-  { id: "pickleball",                label: "🏸 Pickleball"    },
-  { id: "lacrosse",                  label: "🥍 Lacrosse"      },
+// 所有子 id 集合，用來快速判斷 sportsLeague 是否為某個群組的子項
+const SPORTS_CATEGORIES = [
+  { id: "all",       icon: "⚡", label: "All Sports" },
+  { id: "soccer",    icon: "⚽", label: "Soccer",    children: [
+    { id: "ucl",                       label: "UCL"          },
+    { id: "epl",                       label: "EPL"          },
+    { id: "la-liga",                   label: "La Liga"      },
+    { id: "bundesliga",                label: "Bundesliga"   },
+    { id: "serie-a",                   label: "Serie A"      },
+    { id: "ligue-1",                   label: "Ligue 1"      },
+    { id: "mls",                       label: "MLS"          },
+    { id: "liga-mx",                   label: "Liga MX"      },
+    { id: "k-league",                  label: "K-League"     },
+    { id: "j-league",                  label: "J. League"    },
+    { id: "saudi-professional-league", label: "Saudi PL"     },
+    { id: "uef",                       label: "UEFA Europa"  },
+    { id: "a-league",                  label: "A-League"     },
+    { id: "eredivisie",                label: "Eredivisie"   },
+    { id: "primeira-liga",             label: "Primeira Liga"},
+    { id: "super-lig",                 label: "Süper Lig"    },
+    { id: "fifa",                      label: "FIFA"         },
+  ]},
+  { id: "basketball", icon: "🏀", label: "Basketball", children: [
+    { id: "nba",   label: "NBA"   },
+    { id: "ncaab", label: "NCAAB" },
+  ]},
+  { id: "esports",   icon: "🎮", label: "Esports",    children: [
+    { id: "esports",          label: "All Esports"  },
+    { id: "cs2",              label: "CS2"           },
+    { id: "league-of-legends",label: "LoL"           },
+    { id: "dota-2",           label: "Dota 2"        },
+    { id: "valorant",         label: "Valorant"      },
+  ]},
+  { id: "nhl",       icon: "🏒", label: "NHL" },
+  { id: "cricket",   icon: "🏏", label: "Cricket",    children: [
+    { id: "cricket", label: "Cricket" },
+    { id: "ipl",     label: "IPL"     },
+  ]},
+  { id: "hockey",    icon: "🏑", label: "Hockey",     children: [
+    { id: "nhl",       label: "NHL"    },
+  ]},
+  { id: "baseball",  icon: "⚾", label: "Baseball",   children: [
+    { id: "mlb", label: "MLB" },
+    { id: "kbo", label: "KBO" },
+  ]},
+  { id: "rugby",     icon: "🏉", label: "Rugby",      children: [
+    { id: "nfl",  label: "NFL"   },
+    { id: "cfb",  label: "CFB"   },
+    { id: "rugby",label: "Rugby" },
+  ]},
+  { id: "tennis",    icon: "🎾", label: "Tennis",     children: [
+    { id: "tennis", label: "Tennis" },
+    { id: "atp",    label: "ATP"    },
+    { id: "wta",    label: "WTA"    },
+  ]},
+  { id: "mma",       icon: "🥊", label: "MMA",        children: [
+    { id: "ufc",    label: "UFC"    },
+    { id: "boxing", label: "Boxing" },
+  ]},
+  { id: "f1",        icon: "🏎", label: "Formula 1" },
+  { id: "golf",      icon: "⛳", label: "Golf" },
+  { id: "table-tennis", icon: "🏓", label: "Table Tennis" },
+  { id: "chess",     icon: "♟", label: "Chess" },
+  { id: "lacrosse",  icon: "🥍", label: "Lacrosse" },
+  { id: "american-football", icon: "🏈", label: "American Football", children: [
+    { id: "nfl", label: "NFL" },
+    { id: "cfb", label: "CFB" },
+  ]},
 ];
 
-/** 建立 Sports 左側分類側欄 */
+/** 取得群組下所有葉節點 id */
+function getCategoryLeafIds(cat) {
+  if (!cat.children) return [cat.id];
+  return cat.children.map((c) => c.id);
+}
+
+/** 當前 sportsLeague 對應的所有要篩選的 id 清單 */
+function getSportsFilterIds() {
+  if (sportsLeague === "all") return null; // null = 不篩選
+  // 先找是否是群組 parent
+  const group = SPORTS_CATEGORIES.find((c) => c.id === sportsLeague && c.children);
+  if (group) return group.children.map((c) => c.id);
+  return [sportsLeague];
+}
+
+// 記錄哪些群組是展開狀態
+const expandedGroups = new Set(["soccer"]); // 預設展開 Soccer
+
+/** 建立 Sports 左側手風琴分類側欄 */
 function buildSportsLeagueTabs() {
   const container = document.getElementById("sports-league-tabs");
   if (!container) return;
 
-  container.innerHTML = POLYMARKET_SPORTS.map((s) => {
-    const active = s.id === sportsLeague ? " active" : "";
-    return `<button class="sports-cat-btn${active}" data-league="${s.id}">${s.label}</button>`;
+  const html = SPORTS_CATEGORIES.map((cat) => {
+    const hasChildren = Array.isArray(cat.children) && cat.children.length > 0;
+    const isExpanded = expandedGroups.has(cat.id);
+    // 判斷是否 active（自身 or 某個子項被選中）
+    const leafIds = getCategoryLeafIds(cat);
+    const isActive = sportsLeague === cat.id || leafIds.includes(sportsLeague);
+
+    if (!hasChildren) {
+      return `<button class="sports-cat-parent${isActive ? " active" : ""}" data-id="${cat.id}" data-leaf="true">
+        <span class="scp-icon">${cat.icon}</span>
+        <span class="scp-label">${cat.label}</span>
+      </button>`;
+    }
+
+    const childrenHtml = cat.children.map((child) => {
+      const childActive = sportsLeague === child.id ? " active" : "";
+      return `<button class="sports-cat-child${childActive}" data-id="${child.id}">${child.label}</button>`;
+    }).join("");
+
+    return `<div class="sports-cat-group${isExpanded ? " expanded" : ""}">
+      <button class="sports-cat-parent${isActive && sportsLeague === cat.id ? " active" : ""}" data-id="${cat.id}" data-leaf="false">
+        <span class="scp-icon">${cat.icon}</span>
+        <span class="scp-label">${cat.label}</span>
+        <span class="scp-chevron">›</span>
+      </button>
+      <div class="sports-cat-children">${childrenHtml}</div>
+    </div>`;
   }).join("");
 
-  container.querySelectorAll(".sports-cat-btn").forEach((btn) => {
+  container.innerHTML = html;
+
+  // Parent 點擊：有子項 → 展開/收合；無子項 → 直接選擇
+  container.querySelectorAll(".sports-cat-parent").forEach((btn) => {
     btn.addEventListener("click", () => {
-      sportsLeague = btn.dataset.league;
-      container.querySelectorAll(".sports-cat-btn").forEach((t) => t.classList.remove("active"));
-      btn.classList.add("active");
-      renderSportsMarkets();
+      const id = btn.dataset.id;
+      const isLeaf = btn.dataset.leaf === "true";
+
+      if (isLeaf) {
+        selectSportsLeague(id);
+      } else {
+        // 展開/收合
+        const group = btn.closest(".sports-cat-group");
+        if (group) {
+          const wasExpanded = group.classList.contains("expanded");
+          group.classList.toggle("expanded", !wasExpanded);
+          if (!wasExpanded) expandedGroups.add(id);
+          else expandedGroups.delete(id);
+        }
+      }
     });
   });
+
+  // Child 點擊 → 選擇子聯賽
+  container.querySelectorAll(".sports-cat-child").forEach((btn) => {
+    btn.addEventListener("click", () => selectSportsLeague(btn.dataset.id));
+  });
+}
+
+function selectSportsLeague(id) {
+  sportsLeague = id;
+  // 更新 active 狀態
+  const container = document.getElementById("sports-league-tabs");
+  if (container) {
+    container.querySelectorAll(".sports-cat-parent, .sports-cat-child").forEach((el) => {
+      el.classList.remove("active");
+    });
+    // 標記被選中的按鈕
+    container.querySelectorAll(`[data-id="${id}"]`).forEach((el) => el.classList.add("active"));
+    // 如果選的是子項，也高亮父項群組
+    SPORTS_CATEGORIES.forEach((cat) => {
+      if (cat.children && cat.children.some((c) => c.id === id)) {
+        const parentBtn = container.querySelector(`.sports-cat-parent[data-id="${cat.id}"]`);
+        if (parentBtn) parentBtn.classList.add("active");
+      }
+    });
+  }
+  renderSportsMarkets();
 }
 
 /** 篩選 + 排序後渲染體育市場列表 */
@@ -1622,8 +1727,9 @@ function renderSportsMarkets() {
   }
 
   let events = cachedSportsEvents;
-  if (sportsLeague !== "all") {
-    events = events.filter((ev) => eventTagSlugs(ev).includes(sportsLeague));
+  const filterIds = getSportsFilterIds();
+  if (filterIds) {
+    events = events.filter((ev) => filterIds.some((id) => eventTagSlugs(ev).includes(id)));
   }
 
   // 排序
