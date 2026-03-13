@@ -1792,6 +1792,17 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   color: var(--accent);
 }
 
+/* Sports tab icon */
+.tab-sport-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  vertical-align: -2px;
+  margin-right: 4px;
+  flex-shrink: 0;
+  filter: brightness(0.9);
+}
+
 /* ===== Sports Nav item ===== */
 #nav-sports svg { display: inline-block; vertical-align: -1px; margin-right: 3px; }
 

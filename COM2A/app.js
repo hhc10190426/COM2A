@@ -258,7 +258,7 @@ function renderEventCard(card, ev) {
     return pb - pa;
   });
 
-  const icon    = ev.image || ev.icon || markets[0]?.image || "";
+  const icon    = ev.image || ev.icon || markets[0]?.image || getSportFallbackIcon(ev) || "";
   const title   = ev.title || ev.question || markets[0]?.question || "";
   const vol24h  = fmtUSD(parseFloat(ev.volume24hr  || 0) || markets.reduce((s, m) => s + parseFloat(m.volume24hr || 0), 0));
   const oi      = fmtUSD(parseFloat(ev.liquidity   || 0) || markets.reduce((s, m) => s + parseFloat(m.liquidity  || 0), 0));
@@ -283,14 +283,17 @@ function renderEventCard(card, ev) {
       </div>`;
   }).join("");
 
-  const evId     = String(ev.id || "");
-  const isTrend  = trendingIds.has(evId);
+  const evId      = String(ev.id || "");
+  const isTrend   = trendingIds.has(evId);
   const isStarred = wlHas(evId);
+  const sportFb   = getSportFallbackIcon(ev);
+  const svgFb     = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22><rect width=%2244%22 height=%2244%22 rx=%2210%22 fill=%22%231e1e2a%22/><text x=%2222%22 y=%2228%22 text-anchor=%22middle%22 fill=%22%236366f1%22 font-size=%2218%22>P</text></svg>";
+  const fallback1 = sportFb ? `this.onerror=function(){this.src='${svgFb}'};this.src='${sportFb}'` : `this.src='${svgFb}'`;
 
   card.innerHTML = `
     <div class="market-header">
       <img class="market-icon" src="${icon}" alt=""
-        onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22><rect width=%2244%22 height=%2244%22 rx=%2210%22 fill=%22%231e1e2a%22/><text x=%2222%22 y=%2228%22 text-anchor=%22middle%22 fill=%22%236366f1%22 font-size=%2218%22>P</text></svg>'"/>
+        onerror="${fallback1}"/>
       <div class="market-info">
         <div class="market-question">
           ${isTrend ? `<span class="trending-badge">🔥 Hot</span> ` : ""}${title}
@@ -334,17 +337,20 @@ function renderBinaryCard(card, m, parentEvent) {
   const endDate = (parentEvent?.endDate || m.endDate)
     ? new Date(parentEvent?.endDate || m.endDate).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })
     : "TBD";
-  const icon    = parentEvent?.image || m.image || m.icon || "";
+  const icon    = parentEvent?.image || m.image || m.icon || getSportFallbackIcon(parentEvent || m) || "";
   const isYes   = yesPct >= 50;
 
-  const evId     = String(parentEvent?.id || m.id || "");
-  const isTrend  = trendingIds.has(evId);
+  const evId      = String(parentEvent?.id || m.id || "");
+  const isTrend   = trendingIds.has(evId);
   const isStarred = wlHas(evId);
+  const sportFb2  = getSportFallbackIcon(parentEvent || m);
+  const svgFb2    = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22><rect width=%2244%22 height=%2244%22 rx=%2210%22 fill=%22%231e1e2a%22/><text x=%2222%22 y=%2228%22 text-anchor=%22middle%22 fill=%22%236366f1%22 font-size=%2218%22>P</text></svg>";
+  const fallback2 = sportFb2 ? `this.onerror=function(){this.src='${svgFb2}'};this.src='${sportFb2}'` : `this.src='${svgFb2}'`;
 
   card.innerHTML = `
     <div class="market-header">
       <img class="market-icon" src="${icon}" alt=""
-        onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22><rect width=%2244%22 height=%2244%22 rx=%2210%22 fill=%22%231e1e2a%22/><text x=%2222%22 y=%2228%22 text-anchor=%22middle%22 fill=%22%236366f1%22 font-size=%2218%22>P</text></svg>'"/>
+        onerror="${fallback2}"/>
       <div class="market-info">
         <div class="market-question">
           ${isTrend ? `<span class="trending-badge">🔥 Hot</span> ` : ""}${m.question}
@@ -539,6 +545,39 @@ let cachedMarkets = [];
 let activeTagId   = "all"; // 目前選中的 tag id
 
 // ===== 解析 outcomePrices（可能是 string 或 array）=====
+// ===== 體育項目備用圖（當 event 沒有官方圖時使用）=====
+const SPORT_FALLBACK_IMGS = {
+  nba:            "sports/basketball_basket_ball_sport-01.png",
+  ncaab:          "sports/basketball_basket_ball_sport-01.png",
+  mlb:            "sports/baseball_softball_bat_ball_sport-01.png",
+  kbo:            "sports/baseball_softball_bat_ball_sport-01.png",
+  wbc:            "sports/baseball_softball_bat_ball_sport-01.png",
+  cricket:        "sports/baseball_softball_cricket_sport-01.png",
+  ipl:            "sports/baseball_softball_cricket_sport-01.png",
+  ufc:            "sports/boxing_glove_gloves_sport-01.png",
+  boxing:         "sports/boxing_glove_gloves_sport-01.png",
+  mma:            "sports/boxing_glove_gloves_sport-01.png",
+  nfl:            "sports/football_american_rugby_sport-01.png",
+  cfb:            "sports/football_american_rugby_sport-01.png",
+  rugby:          "sports/football_american_rugby_sport-01.png",
+  golf:           "sports/golf_green_sport_hole_flag-01.png",
+  pga:            "sports/golf_green_sport_hole_flag-01.png",
+  f1:             "sports/motorcycle_helmet_race_safety-01.png",
+  "formula-1":    "sports/motorcycle_helmet_race_safety-01.png",
+  formula1:       "sports/motorcycle_helmet_race_safety-01.png",
+  "table-tennis": "sports/ping_pong_tennis_table-01.png",
+  pickleball:     "sports/badminton_shuttlecock_game_sport-01.png",
+};
+
+/** 根據 event tags 取得對應的體育備用圖 */
+function getSportFallbackIcon(ev) {
+  const slugs = (ev?.tags || []).map((t) => (t.slug || t.id || "").toLowerCase());
+  for (const slug of slugs) {
+    if (SPORT_FALLBACK_IMGS[slug]) return SPORT_FALLBACK_IMGS[slug];
+  }
+  return null;
+}
+
 function parseOutcomePrices(raw) {
   if (Array.isArray(raw)) return raw.map(Number);
   if (typeof raw === "string") {
@@ -1527,76 +1566,81 @@ function setSportsStatus(state, text) {
 }
 
 // ===== Polymarket Sports 完整分類（硬編碼，與 polymarket.com/sports 一致）=====
+// 圖片路徑簡寫
+const _SI = "sports/";
 const POLYMARKET_SPORTS = [
   // 總覽
-  { id: "all",                      label: "🏆 All Sports"            },
+  { id: "all",                       label: "All Sports",      img: null              },
   // 籃球
-  { id: "nba",                      label: "🏀 NBA"                   },
-  { id: "ncaab",                    label: "🏀 NCAAB"                 },
-  // 足球（Soccer）
-  { id: "ucl",                      label: "⚽ UCL"                   },
-  { id: "epl",                      label: "⚽ EPL"                   },
-  { id: "la-liga",                  label: "⚽ La Liga"               },
-  { id: "bundesliga",               label: "⚽ Bundesliga"            },
-  { id: "serie-a",                  label: "⚽ Serie A"               },
-  { id: "ligue-1",                  label: "⚽ Ligue 1"               },
-  { id: "mls",                      label: "⚽ MLS"                   },
-  { id: "liga-mx",                  label: "⚽ Liga MX"               },
-  { id: "k-league",                 label: "⚽ K-League"              },
-  { id: "j-league",                 label: "⚽ J. League"             },
-  { id: "saudi-professional-league",label: "⚽ Saudi PL"              },
-  { id: "uef",                      label: "⚽ UEFA Europa"           },
-  { id: "a-league",                 label: "⚽ A-League"              },
-  { id: "eredivisie",               label: "⚽ Eredivisie"            },
-  { id: "primeira-liga",            label: "⚽ Primeira Liga"         },
-  { id: "super-lig",                label: "⚽ Süper Lig"             },
-  { id: "fifa",                     label: "⚽ FIFA / World Cup"      },
-  // 冰球
-  { id: "nhl",                      label: "🏒 NHL"                   },
-  // 電競
-  { id: "esports",                  label: "🎮 Esports"               },
-  { id: "cs2",                      label: "🎮 CS2"                   },
-  { id: "league-of-legends",        label: "🎮 LoL"                   },
-  { id: "dota-2",                   label: "🎮 Dota 2"                },
-  { id: "valorant",                 label: "🎮 Valorant"              },
-  // 網球
-  { id: "tennis",                   label: "🎾 Tennis"                },
-  { id: "atp",                      label: "🎾 ATP"                   },
-  { id: "wta",                      label: "🎾 WTA"                   },
+  { id: "nba",                       label: "NBA",             img: _SI + "basketball_basket_ball_sport-01.png"      },
+  { id: "ncaab",                     label: "NCAAB",           img: _SI + "basketball_basket_ball_sport-01.png"      },
+  // 足球（Soccer）— 沒有對應圖，用 emoji
+  { id: "ucl",                       label: "⚽ UCL",          img: null              },
+  { id: "epl",                       label: "⚽ EPL",          img: null              },
+  { id: "la-liga",                   label: "⚽ La Liga",      img: null              },
+  { id: "bundesliga",                label: "⚽ Bundesliga",   img: null              },
+  { id: "serie-a",                   label: "⚽ Serie A",      img: null              },
+  { id: "ligue-1",                   label: "⚽ Ligue 1",      img: null              },
+  { id: "mls",                       label: "⚽ MLS",          img: null              },
+  { id: "liga-mx",                   label: "⚽ Liga MX",      img: null              },
+  { id: "k-league",                  label: "⚽ K-League",     img: null              },
+  { id: "j-league",                  label: "⚽ J. League",    img: null              },
+  { id: "saudi-professional-league", label: "⚽ Saudi PL",     img: null              },
+  { id: "uef",                       label: "⚽ UEFA Europa",  img: null              },
+  { id: "a-league",                  label: "⚽ A-League",     img: null              },
+  { id: "eredivisie",                label: "⚽ Eredivisie",   img: null              },
+  { id: "primeira-liga",             label: "⚽ Primeira Liga",img: null              },
+  { id: "super-lig",                 label: "⚽ Süper Lig",    img: null              },
+  { id: "fifa",                      label: "⚽ FIFA",         img: null              },
+  // 冰球 — 暫無圖
+  { id: "nhl",                       label: "🏒 NHL",          img: null              },
+  // 電競 — 暫無圖
+  { id: "esports",                   label: "🎮 Esports",      img: null              },
+  { id: "cs2",                       label: "🎮 CS2",          img: null              },
+  { id: "league-of-legends",         label: "🎮 LoL",          img: null              },
+  { id: "dota-2",                    label: "🎮 Dota 2",       img: null              },
+  { id: "valorant",                  label: "🎮 Valorant",     img: null              },
+  // 網球 — 暫無圖
+  { id: "tennis",                    label: "🎾 Tennis",       img: null              },
+  { id: "atp",                       label: "🎾 ATP",          img: null              },
+  { id: "wta",                       label: "🎾 WTA",          img: null              },
   // 板球
-  { id: "cricket",                  label: "🏏 Cricket"               },
-  { id: "ipl",                      label: "🏏 IPL"                   },
+  { id: "cricket",                   label: "Cricket",         img: _SI + "baseball_softball_cricket_sport-01.png"   },
+  { id: "ipl",                       label: "IPL",             img: _SI + "baseball_softball_cricket_sport-01.png"   },
   // 棒球
-  { id: "mlb",                      label: "⚾ MLB"                   },
-  { id: "kbo",                      label: "⚾ KBO"                   },
-  // 美式足球
-  { id: "nfl",                      label: "🏈 NFL"                   },
-  { id: "cfb",                      label: "🏈 CFB"                   },
+  { id: "mlb",                       label: "MLB",             img: _SI + "baseball_softball_bat_ball_sport-01.png"  },
+  { id: "kbo",                       label: "KBO",             img: _SI + "baseball_softball_bat_ball_sport-01.png"  },
+  // 美式足球 / 橄欖球
+  { id: "nfl",                       label: "NFL",             img: _SI + "football_american_rugby_sport-01.png"     },
+  { id: "cfb",                       label: "CFB",             img: _SI + "football_american_rugby_sport-01.png"     },
+  { id: "rugby",                     label: "Rugby",           img: _SI + "football_american_rugby_sport-01.png"     },
   // 賽車
-  { id: "f1",                       label: "🏎 Formula 1"             },
+  { id: "f1",                        label: "Formula 1",       img: _SI + "motorcycle_helmet_race_safety-01.png"     },
   // 格鬥
-  { id: "ufc",                      label: "🥊 UFC"                   },
+  { id: "ufc",                       label: "UFC",             img: _SI + "boxing_glove_gloves_sport-01.png"         },
+  { id: "boxing",                    label: "Boxing",          img: _SI + "boxing_glove_gloves_sport-01.png"         },
   // 高爾夫
-  { id: "golf",                     label: "⛳ Golf"                  },
-  // 橄欖球
-  { id: "rugby",                    label: "🏉 Rugby"                 },
+  { id: "golf",                      label: "Golf",            img: _SI + "golf_green_sport_hole_flag-01.png"        },
   // 桌球
-  { id: "table-tennis",             label: "🏓 Table Tennis"          },
+  { id: "table-tennis",              label: "Table Tennis",    img: _SI + "ping_pong_tennis_table-01.png"            },
   // 其他
-  { id: "chess",                    label: "♟ Chess"                  },
-  { id: "boxing",                   label: "🥊 Boxing"                },
-  { id: "pickleball",               label: "🏸 Pickleball"            },
-  { id: "lacrosse",                 label: "🥍 Lacrosse"              },
+  { id: "chess",                     label: "♟ Chess",         img: null              },
+  { id: "pickleball",                label: "Pickleball",      img: _SI + "badminton_shuttlecock_game_sport-01.png"  },
+  { id: "lacrosse",                  label: "🥍 Lacrosse",     img: null              },
 ];
 
-/** 建立 Sports 聯賽 Tabs（使用 Polymarket 官方完整分類）*/
+/** 建立 Sports 聯賽 Tabs（含圖片 icon）*/
 function buildSportsLeagueTabs() {
   const container = document.getElementById("sports-league-tabs");
   if (!container) return;
 
-  container.innerHTML = POLYMARKET_SPORTS.map((s) =>
-    `<button class="tab${s.id === sportsLeague ? " active" : ""}" data-league="${s.id}">${s.label}</button>`
-  ).join("");
+  container.innerHTML = POLYMARKET_SPORTS.map((s) => {
+    const active = s.id === sportsLeague ? " active" : "";
+    const iconHtml = s.img
+      ? `<img src="${s.img}" class="tab-sport-icon" alt="" onerror="this.style.display='none'">`
+      : "";
+    return `<button class="tab${active}" data-league="${s.id}">${iconHtml}${s.label}</button>`;
+  }).join("");
 
   container.querySelectorAll(".tab").forEach((btn) => {
     btn.addEventListener("click", () => {
