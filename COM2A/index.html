@@ -9,7 +9,22 @@
   <meta http-equiv="Expires" content="0"/>
   <link rel="stylesheet" href="styles.css?v=7" />
   <style>
-    /* 強制 3 欄 grid，不依賴 CSS 快取 */
+    /* ── 核心修復：防止 feed-area 被 tabs 撐破 grid ── */
+    .content-grid {
+      display: grid !important;
+      grid-template-columns: 1fr 360px !important;
+      gap: 24px !important;
+    }
+    .feed-area {
+      min-width: 0 !important;   /* 防止 grid item 被內容撐開 */
+      overflow: hidden !important;
+    }
+    .category-tabs {
+      overflow-x: auto !important;
+      flex-wrap: nowrap !important;
+    }
+
+    /* ── 3 欄市場卡片 ── */
     #markets-list {
       display: grid !important;
       grid-template-columns: repeat(3, 1fr) !important;
@@ -18,20 +33,16 @@
     #markets-list .market-card {
       min-width: 0 !important;
       overflow: hidden !important;
-      padding: 14px 16px !important;
-      gap: 10px !important;
     }
     .event-preview-label {
-      font-size: 12px !important;
       min-width: 0 !important;
       max-width: 110px !important;
       flex-shrink: 1 !important;
     }
-    .event-preview-pct { font-size: 12px !important; min-width: 28px !important; }
-    .market-icon { width: 36px !important; height: 36px !important; }
-    .market-question { font-size: 12.5px !important; }
     @media (max-width: 900px) {
+      .content-grid { grid-template-columns: 1fr !important; }
       #markets-list { grid-template-columns: repeat(2, 1fr) !important; }
+      .feed-area { overflow: visible !important; }
     }
     @media (max-width: 560px) {
       #markets-list { grid-template-columns: 1fr !important; }
@@ -192,6 +203,6 @@
     </div>
   </main>
 
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>
