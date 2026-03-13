@@ -1587,20 +1587,20 @@ const POLYMARKET_SPORTS = [
   { id: "lacrosse",                  label: "🥍 Lacrosse"      },
 ];
 
-/** 建立 Sports 聯賽 Tabs */
+/** 建立 Sports 左側分類側欄 */
 function buildSportsLeagueTabs() {
   const container = document.getElementById("sports-league-tabs");
   if (!container) return;
 
   container.innerHTML = POLYMARKET_SPORTS.map((s) => {
     const active = s.id === sportsLeague ? " active" : "";
-    return `<button class="tab${active}" data-league="${s.id}">${s.label}</button>`;
+    return `<button class="sports-cat-btn${active}" data-league="${s.id}">${s.label}</button>`;
   }).join("");
 
-  container.querySelectorAll(".tab").forEach((btn) => {
+  container.querySelectorAll(".sports-cat-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       sportsLeague = btn.dataset.league;
-      container.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+      container.querySelectorAll(".sports-cat-btn").forEach((t) => t.classList.remove("active"));
       btn.classList.add("active");
       renderSportsMarkets();
     });
