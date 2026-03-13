@@ -1407,35 +1407,78 @@ function computeTrending(events) {
 
 // ===== Sports 頁面 =====
 
+/** Sports 專用快取 TTL：15 分鐘 */
+const SPORTS_CACHE_TTL = 15 * 60 * 1000;
+
+function sportsCacheGet() {
+  try {
+    const item = JSON.parse(localStorage.getItem("pm_sports_all") || "null");
+    if (item && Date.now() - item.ts < SPORTS_CACHE_TTL) return item.data;
+  } catch (_) {}
+  return null;
+}
+function sportsCacheSet(data) {
+  try {
+    localStorage.setItem("pm_sports_all", JSON.stringify({ ts: Date.now(), data }));
+  } catch (_) {}
+}
+
+/**
+ * 需要個別抓取的 tag slug（這些 tag 在 Polymarket 上是獨立分類，
+ * 不一定有 sports tag，例如 esports、ncaab）
+ */
+const EXTRA_SPORT_TAGS = [
+  "esports", "ncaab", "nba", "nhl", "nfl", "mlb",
+  "ufc", "f1", "tennis", "golf", "cricket", "soccer",
+];
+
 /** Polymarket 各體育聯賽對應的 tag slug 與顯示名稱 */
 const SPORTS_LEAGUES = [
-  { id: "all",        label: "🏆 All Sports" },
-  { id: "epl",        label: "⚽ EPL" },
-  { id: "ucl",        label: "⚽ UCL" },
-  { id: "nba",        label: "🏀 NBA" },
-  { id: "nfl",        label: "🏈 NFL" },
-  { id: "mlb",        label: "⚾ MLB" },
-  { id: "nhl",        label: "🏒 NHL" },
-  { id: "ufc",        label: "🥊 UFC/MMA" },
-  { id: "tennis",     label: "🎾 Tennis" },
-  { id: "golf",       label: "⛳ Golf" },
-  { id: "cricket",    label: "🏏 Cricket" },
-  { id: "formula1",   label: "🏎 F1" },
+  { id: "all",      label: "🏆 All Sports"  },
+  // 球類運動
+  { id: "soccer",   label: "⚽ Soccer"       },
+  { id: "epl",      label: "⚽ EPL"          },
+  { id: "ucl",      label: "⚽ UCL"          },
+  { id: "bundesliga", label: "⚽ Bundesliga" },
+  { id: "seriea",   label: "⚽ Serie A"      },
+  { id: "laliga",   label: "⚽ La Liga"      },
+  { id: "ligue1",   label: "⚽ Ligue 1"      },
+  { id: "nba",      label: "🏀 NBA"          },
+  { id: "ncaab",    label: "🏀 NCAAB"        },
+  { id: "nfl",      label: "🏈 NFL/CFB"      },
+  { id: "nhl",      label: "🏒 NHL"          },
+  { id: "mlb",      label: "⚾ MLB"          },
+  { id: "ufc",      label: "🥊 UFC/MMA"      },
+  { id: "tennis",   label: "🎾 Tennis"       },
+  { id: "golf",     label: "⛳ Golf"         },
+  { id: "cricket",  label: "🏏 Cricket"      },
+  { id: "formula1", label: "🏎 F1"           },
+  { id: "esports",  label: "🎮 Esports"      },
+  { id: "rugby",    label: "🏉 Rugby"        },
+  { id: "other",    label: "🏅 Other"        },
 ];
 
 /** 關鍵字匹配，用於從 event title / tags 判斷聯賽 */
 const SPORTS_LEAGUE_PATTERNS = {
-  epl:      /premier league|epl|\bla liga\b|\bbundesliga\b|\bserie a\b|\bligue 1\b/i,
-  ucl:      /champions league|ucl|uefa/i,
-  nba:      /\bnba\b/i,
-  nfl:      /\bnfl\b|super bowl/i,
-  mlb:      /\bmlb\b|world series/i,
-  nhl:      /\bnhl\b|stanley cup/i,
-  ufc:      /\bufc\b|\bmma\b/i,
-  tennis:   /tennis|wimbledon|us open|french open|australian open|atp|wta/i,
-  golf:     /golf|masters|pga|lpga/i,
-  cricket:  /cricket|\bipl\b|\bicc\b/i,
-  formula1: /formula 1|formula1|f1|grand prix/i,
+  soccer:     /\bsoccer\b|\bfootball\b(?!.*nfl|.*cfb|.*american)/i,
+  epl:        /premier league|\bepl\b/i,
+  ucl:        /champions league|\bucl\b|\buefa\b/i,
+  bundesliga: /bundesliga/i,
+  seriea:     /\bserie a\b/i,
+  laliga:     /\bla liga\b/i,
+  ligue1:     /\bligue 1\b/i,
+  nba:        /\bnba\b/i,
+  ncaab:      /\bncaab\b|college basketball/i,
+  nfl:        /\bnfl\b|super bowl|\bcfb\b|college football/i,
+  nhl:        /\bnhl\b|stanley cup/i,
+  mlb:        /\bmlb\b|world series|\bkbo\b|\bwbc\b/i,
+  ufc:        /\bufc\b|\bmma\b|zuffa/i,
+  tennis:     /tennis|wimbledon|us open|french open|australian open|\batp\b|\bwta\b/i,
+  golf:       /golf|\bmasters\b|\bpga\b|\blpga\b/i,
+  cricket:    /cricket|\bipl\b|\bicc\b|\bbbl\b|\bpsl\b/i,
+  formula1:   /formula.?1|\bf1\b|grand prix/i,
+  esports:    /esport|\bcs2\b|\bcounter.strike\b|\bcs:go\b|\bdota\b|\bvalorant\b|\blol\b|\bleague of legends\b|\boverwatch\b|\brocket league\b|\bcall of duty\b/i,
+  rugby:      /rugby|six nations|super rugby|premiership rugby|top 14/i,
 };
 
 let cachedSportsEvents = [];
@@ -1454,11 +1497,56 @@ function detectLeagues(ev) {
     .map(([id]) => id);
 }
 
-/** 從 Polymarket 抓體育類事件（tag=sports） */
+/** 從一個 URL 拉事件（不強制快取 key，避免覆蓋彼此）*/
+async function fetchEventsFromUrl(url) {
+  try {
+    const data = await apiFetch(url, null);
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (_) {
+    return [];
+  }
+}
+
+/**
+ * 從 Polymarket 大量抓取體育事件：
+ *   - sports tag 分頁（前 3 頁 = 最多 300 筆，按 volume 排序）
+ *   - 電競、各主要聯賽獨立 tag（Polymarket 的電競事件不一定掛 sports tag）
+ *   - 去重後回傳
+ */
 async function fetchSportsEvents() {
-  const url = `${GAMMA_API}/events?tag=sports&active=true&closed=false&limit=100&order=volume24hr&ascending=false`;
-  const data = await apiFetch(url, "events_sports");
-  return Array.isArray(data) ? data : (data?.data || []);
+  // 先查快取
+  const cached = sportsCacheGet();
+  if (cached) return cached;
+
+  setSportsStatus("loading", "正在載入...");
+
+  // ── 1. sports tag 前 3 頁（最高 volume 的 300 筆）──
+  const BASE = `${GAMMA_API}/events?active=true&closed=false&limit=100&order=volume24hr&ascending=false`;
+  const sportsPages = [0, 100, 200].map((offset) =>
+    fetchEventsFromUrl(`${BASE}&tag=sports&offset=${offset}`)
+  );
+
+  // ── 2. 額外獨立 tag（並行，失敗不阻斷）──
+  const extraTagRequests = EXTRA_SPORT_TAGS.map((tag) =>
+    fetchEventsFromUrl(`${BASE}&tag=${tag}`)
+  );
+
+  // 全部並行
+  const allResults = await Promise.all([...sportsPages, ...extraTagRequests]);
+
+  // 去重
+  const seenIds = new Set();
+  const allEvents = [];
+  allResults.flat().forEach((ev) => {
+    const id = String(ev.id || "");
+    if (id && !seenIds.has(id)) {
+      seenIds.add(id);
+      allEvents.push(ev);
+    }
+  });
+
+  if (allEvents.length > 0) sportsCacheSet(allEvents);
+  return allEvents;
 }
 
 /** 設定 Sports API 狀態 */
@@ -1474,6 +1562,12 @@ function buildSportsLeagueTabs(events) {
   const container = document.getElementById("sports-league-tabs");
   if (!container) return;
 
+  if (events.length === 0) {
+    container.innerHTML = `<button class="tab active" data-league="all">🏆 All Sports</button>`;
+    container.querySelector(".tab").addEventListener("click", () => {});
+    return;
+  }
+
   // 計算每個 league 有多少事件
   const counts = {};
   events.forEach((ev) => {
@@ -1483,14 +1577,20 @@ function buildSportsLeagueTabs(events) {
     });
   });
 
-  const tabs = SPORTS_LEAGUES.filter(
-    (l) => l.id === "all" || counts[l.id]
+  // 只顯示有資料的 tab，"All" 永遠顯示
+  const visibleTabs = SPORTS_LEAGUES.filter(
+    (l) => l.id === "all" || (counts[l.id] && counts[l.id] > 0)
   );
 
-  container.innerHTML = tabs.map((l) => {
+  // 若目前選中的 league 已沒有資料，重置為 all
+  if (sportsLeague !== "all" && !counts[sportsLeague]) {
+    sportsLeague = "all";
+  }
+
+  container.innerHTML = visibleTabs.map((l) => {
     const cnt = l.id === "all" ? events.length : (counts[l.id] || 0);
     const active = l.id === sportsLeague ? " active" : "";
-    return `<button class="tab${active}" data-league="${l.id}">${l.label} <span class="tab-count">${cnt}</span></button>`;
+    return `<button class="tab${active}" data-league="${l.id}">${l.label}<span class="tab-count">${cnt}</span></button>`;
   }).join("");
 
   container.querySelectorAll(".tab").forEach((btn) => {
@@ -1543,18 +1643,20 @@ async function loadSportsView() {
   setSportsStatus("loading", "連接中...");
   const list = document.getElementById("sports-markets-list");
   if (list) {
-    // 先渲染 skeleton
     list.style.display = "grid";
     list.style.gridTemplateColumns = "repeat(3, 1fr)";
     list.style.gap = "10px";
-    list.innerHTML = skeletonHTML(9);
+    list.innerHTML = skeletonHTML(12);
   }
+
+  // 先顯示空的 tabs
+  buildSportsLeagueTabs([]);
 
   try {
     const events = await fetchSportsEvents();
     if (events.length === 0) throw new Error("empty");
     cachedSportsEvents = events;
-    setSportsStatus("live", `即時數據 · ${events.length} markets`);
+    setSportsStatus("live", `即時數據 · ${events.length.toLocaleString()} markets`);
     buildSportsLeagueTabs(events);
     renderSportsMarkets();
   } catch (err) {
@@ -1562,11 +1664,13 @@ async function loadSportsView() {
     // 備援：從主頁已快取的事件中，以關鍵字篩選體育類
     const fallback = cachedEvents.filter((ev) => {
       const text = (ev.title || "") + " " + (ev.tags || []).map((t) => t.label || "").join(" ");
-      return /sports|epl|nba|nfl|ucl|ufc|tennis|golf|cricket|formula|soccer|football|basketball/i.test(text);
+      return /sports|epl|nba|nfl|ucl|ufc|tennis|golf|cricket|formula|soccer|football|basketball|esport|cs2|dota|valorant|nhl|mlb/i.test(text);
     });
     cachedSportsEvents = fallback;
-    setSportsStatus(fallback.length ? "simulated" : "error",
-      fallback.length ? `備用數據 · ${fallback.length} markets` : "無法載入");
+    setSportsStatus(
+      fallback.length ? "simulated" : "error",
+      fallback.length ? `備用數據 · ${fallback.length} markets` : "無法載入"
+    );
     buildSportsLeagueTabs(fallback);
     renderSportsMarkets();
   }
