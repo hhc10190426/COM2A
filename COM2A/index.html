@@ -87,7 +87,28 @@
     .threat-stat.critical { background: rgba(239,68,68,0.15); color: #f87171; }
     .threat-stat.high     { background: rgba(249,115,22,0.15); color: #fb923c; }
     .threat-stat.medium   { background: rgba(234,179,8,0.15);  color: #fbbf24; }
-    .threat-events-list { display: flex; flex-direction: column; gap: 8px; }
+    /* ── Intel 事件列表：固定高度 + 可滾動 ── */
+    .threat-events-list {
+      display: flex; flex-direction: column; gap: 8px;
+      max-height: 420px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border, #2a2a38) transparent;
+      padding-right: 4px;
+    }
+    .threat-events-list::-webkit-scrollbar { width: 4px; }
+    .threat-events-list::-webkit-scrollbar-thumb { background: var(--border, #2a2a38); border-radius: 4px; }
+
+    /* Intel view 側邊欄固定，不跟著事件列表滾動 */
+    #view-intel .sports-body { align-items: flex-start; }
+    #view-intel .sports-sidebar {
+      position: sticky;
+      top: 72px;
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border, #2a2a38) transparent;
+    }
     .threat-event-card {
       background: var(--bg-card, #1a1a24);
       border: 1px solid var(--border, #2a2a38);

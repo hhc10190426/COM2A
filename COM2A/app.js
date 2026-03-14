@@ -2409,7 +2409,12 @@ function buildThreatLabel(ev) {
 
 function loadIntelView() {
   updateThreatStats(THREAT_EVENTS);
-  initThreatGlobe();
+  // RAF ensures the view's layout (width/height) is fully calculated before Globe.gl reads it
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      initThreatGlobe();
+    });
+  });
   renderThreatEvents(THREAT_EVENTS);
   initThreatFilters();
 }
@@ -2419,16 +2424,20 @@ function initThreatGlobe() {
   const container = document.getElementById("threat-map");
   if (!container || typeof Globe === "undefined") return;
 
+  const w = container.clientWidth  || 800;
+  const h = container.clientHeight || 480;
+
   const ringEvents = THREAT_EVENTS.filter((e) => e.level === "critical" || e.level === "high");
 
   threatGlobe = Globe({ animateIn: true })(container)
+    .width(w)
+    .height(h)
     .globeImageUrl("//unpkg.com/three-globe/example/img/earth-night.jpg")
     .bumpImageUrl("//unpkg.com/three-globe/example/img/earth-topology.png")
     .backgroundColor("#0a0a10")
     .showAtmosphere(true)
     .atmosphereColor("#6366f1")
     .atmosphereAltitude(0.13)
-    // Threat point markers
     .pointsData(THREAT_EVENTS)
     .pointLat("lat")
     .pointLng("lng")
@@ -2437,10 +2446,10 @@ function initThreatGlobe() {
     .pointAltitude(0.012)
     .pointLabel((d) => buildThreatLabel(d))
     .onPointClick((d) => {
+      threatGlobe.controls().autoRotate = false;
       threatGlobe.pointOfView({ lat: d.lat, lng: d.lng, altitude: 1.6 }, 1200);
       highlightThreatCard(d.id);
     })
-    // Pulsing rings for critical/high events
     .ringsData(ringEvents)
     .ringLat("lat")
     .ringLng("lng")
@@ -2456,6 +2465,16 @@ function initThreatGlobe() {
   threatGlobe.controls().autoRotate = true;
   threatGlobe.controls().autoRotateSpeed = 0.4;
   threatGlobe.pointOfView({ lat: 25, lng: 20, altitude: 2.4 });
+
+  // Keep globe sized to container on window resize
+  const ro = new ResizeObserver(() => {
+    const cw = container.clientWidth;
+    const ch = container.clientHeight;
+    if (threatGlobe && cw > 0 && ch > 0) {
+      threatGlobe.width(cw).height(ch);
+    }
+  });
+  ro.observe(container);
 }
 
 function highlightThreatCard(id) {
