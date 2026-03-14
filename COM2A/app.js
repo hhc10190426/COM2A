@@ -2446,7 +2446,6 @@ function initThreatGlobe() {
     .pointAltitude(0.012)
     .pointLabel((d) => buildThreatLabel(d))
     .onPointClick((d) => {
-      threatGlobe.controls().autoRotate = false;
       threatGlobe.pointOfView({ lat: d.lat, lng: d.lng, altitude: 1.6 }, 1200);
       highlightThreatCard(d.id);
     })
@@ -2462,9 +2461,8 @@ function initThreatGlobe() {
     .ringRepeatPeriod(1000)
     .ringAltitude(0.005);
 
-  threatGlobe.controls().autoRotate = true;
-  threatGlobe.controls().autoRotateSpeed = 0.4;
-  threatGlobe.pointOfView({ lat: 25, lng: 20, altitude: 2.4 });
+  threatGlobe.controls().autoRotate = false;
+  threatGlobe.pointOfView({ lat: 25, lng: 20, altitude: 1.8 });
 
   // Keep globe sized to container on window resize
   const ro = new ResizeObserver(() => {
@@ -2519,7 +2517,6 @@ function renderThreatEvents(events) {
       const ev = THREAT_EVENTS.find((e) => e.id === Number(card.dataset.id));
       if (!ev) return;
       if (threatGlobe) {
-        threatGlobe.controls().autoRotate = false;
         threatGlobe.pointOfView({ lat: ev.lat, lng: ev.lng, altitude: 1.6 }, 1200);
       }
       highlightThreatCard(ev.id);
