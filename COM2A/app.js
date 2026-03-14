@@ -2419,19 +2419,101 @@ function loadIntelView() {
   initThreatFilters();
 }
 
-function initThreatGlobe() {
+// ── 事件所在國家對照表（用於地圖高亮）──
+const LOCATION_TO_COUNTRY = {
+  "Ukraine":          "Ukraine",
+  "Sudan":            "Sudan",
+  "North Korea":      "North Korea",
+  "Somalia":          "Somalia",
+  "Georgia":          "Georgia",
+  "Germany":          "Germany",
+  "Afghanistan":      "Afghanistan",
+  "Nigeria":          "Nigeria",
+  "Myanmar":          "Myanmar",
+  "Lebanon":          "Lebanon",
+  "Eastern DRC":      "Democratic Republic of the Congo",
+  "Philippines":      "Philippines",
+  "Argentina":        "Argentina",
+  "Russia":           "Russia",
+  "Iran":             "Iran",
+  "Nagorno-Karabakh": "Azerbaijan",
+  "South Korea":      "South Korea",
+  "California":       "United States of America",
+  "Washington D.C":   "United States of America",
+};
+
+function buildCountryThreatMap() {
+  const priority = { critical: 4, high: 3, medium: 2, low: 1 };
+  const map = {};
+  THREAT_EVENTS.forEach((ev) => {
+    for (const [key, country] of Object.entries(LOCATION_TO_COUNTRY)) {
+      if (ev.location.includes(key)) {
+        if (!map[country] || priority[ev.level] > priority[map[country]]) {
+          map[country] = ev.level;
+        }
+        break;
+      }
+    }
+  });
+  return map;
+}
+
+// ── 主要國家標籤資料（lat/lng 為地圖中心點）──
+const GLOBE_COUNTRY_LABELS = [
+  { name: "USA",           lat: 39.5,   lng: -98.4,   sz: 0.55 },
+  { name: "Canada",        lat: 60.0,   lng: -96.0,   sz: 0.50 },
+  { name: "Brazil",        lat: -10.0,  lng: -52.0,   sz: 0.52 },
+  { name: "Mexico",        lat: 23.6,   lng: -102.5,  sz: 0.40 },
+  { name: "Argentina",     lat: -34.0,  lng: -64.0,   sz: 0.40 },
+  { name: "UK",            lat: 54.0,   lng: -2.0,    sz: 0.32 },
+  { name: "France",        lat: 46.2,   lng: 2.2,     sz: 0.35 },
+  { name: "Germany",       lat: 51.2,   lng: 10.5,    sz: 0.35 },
+  { name: "Ukraine",       lat: 49.0,   lng: 32.0,    sz: 0.38 },
+  { name: "Russia",        lat: 62.0,   lng: 95.0,    sz: 0.65 },
+  { name: "Turkey",        lat: 39.0,   lng: 35.0,    sz: 0.38 },
+  { name: "Iran",          lat: 32.0,   lng: 53.7,    sz: 0.42 },
+  { name: "Saudi Arabia",  lat: 24.0,   lng: 45.0,    sz: 0.40 },
+  { name: "Israel",        lat: 31.5,   lng: 34.8,    sz: 0.25 },
+  { name: "Lebanon",       lat: 33.9,   lng: 35.9,    sz: 0.22 },
+  { name: "Syria",         lat: 34.8,   lng: 38.8,    sz: 0.28 },
+  { name: "India",         lat: 20.0,   lng: 78.0,    sz: 0.52 },
+  { name: "China",         lat: 35.0,   lng: 103.0,   sz: 0.58 },
+  { name: "North Korea",   lat: 40.3,   lng: 127.5,   sz: 0.30 },
+  { name: "South Korea",   lat: 36.5,   lng: 127.8,   sz: 0.30 },
+  { name: "Japan",         lat: 36.0,   lng: 138.0,   sz: 0.38 },
+  { name: "Pakistan",      lat: 30.0,   lng: 70.0,    sz: 0.40 },
+  { name: "Afghanistan",   lat: 33.9,   lng: 67.7,    sz: 0.35 },
+  { name: "Myanmar",       lat: 19.0,   lng: 96.7,    sz: 0.32 },
+  { name: "Philippines",   lat: 12.0,   lng: 122.0,   sz: 0.35 },
+  { name: "Indonesia",     lat: -2.0,   lng: 118.0,   sz: 0.48 },
+  { name: "Australia",     lat: -25.0,  lng: 133.0,   sz: 0.55 },
+  { name: "Nigeria",       lat: 9.1,    lng: 8.7,     sz: 0.38 },
+  { name: "Sudan",         lat: 12.9,   lng: 30.0,    sz: 0.38 },
+  { name: "Egypt",         lat: 26.0,   lng: 30.0,    sz: 0.38 },
+  { name: "Ethiopia",      lat: 9.0,    lng: 40.0,    sz: 0.35 },
+  { name: "DRC",           lat: -4.0,   lng: 24.0,    sz: 0.38 },
+  { name: "Somalia",       lat: 5.2,    lng: 46.0,    sz: 0.30 },
+  { name: "South Africa",  lat: -30.0,  lng: 25.0,    sz: 0.40 },
+  { name: "Libya",         lat: 26.3,   lng: 17.2,    sz: 0.38 },
+  { name: "Mali",          lat: 17.6,   lng: -1.5,    sz: 0.35 },
+  { name: "Georgia",       lat: 42.3,   lng: 43.4,    sz: 0.25 },
+  { name: "Azerbaijan",    lat: 40.1,   lng: 47.6,    sz: 0.25 },
+  { name: "Yemen",         lat: 15.6,   lng: 48.0,    sz: 0.30 },
+  { name: "Venezuela",     lat: 6.4,    lng: -66.6,   sz: 0.35 },
+];
+
+async function initThreatGlobe() {
   if (threatGlobe) return;
   const container = document.getElementById("threat-map");
   if (!container || typeof Globe === "undefined") return;
 
   const w = container.clientWidth  || 800;
   const h = container.clientHeight || 480;
-
   const ringEvents = THREAT_EVENTS.filter((e) => e.level === "critical" || e.level === "high");
 
+  // 先初始化地球儀，讓標記立即顯示
   threatGlobe = Globe({ animateIn: true })(container)
-    .width(w)
-    .height(h)
+    .width(w).height(h)
     .globeImageUrl("//unpkg.com/three-globe/example/img/earth-night.jpg")
     .bumpImageUrl("//unpkg.com/three-globe/example/img/earth-topology.png")
     .backgroundColor("#0a0a10")
@@ -2439,40 +2521,72 @@ function initThreatGlobe() {
     .atmosphereColor("#6366f1")
     .atmosphereAltitude(0.13)
     .pointsData(THREAT_EVENTS)
-    .pointLat("lat")
-    .pointLng("lng")
+    .pointLat("lat").pointLng("lng")
     .pointColor((d) => getThreatColor(d.level))
     .pointRadius((d) => getThreatPointRadius(d.level))
-    .pointAltitude(0.012)
+    .pointAltitude(0.015)
     .pointLabel((d) => buildThreatLabel(d))
     .onPointClick((d) => {
       threatGlobe.pointOfView({ lat: d.lat, lng: d.lng, altitude: 1.6 }, 1200);
       highlightThreatCard(d.id);
     })
     .ringsData(ringEvents)
-    .ringLat("lat")
-    .ringLng("lng")
+    .ringLat("lat").ringLng("lng")
     .ringColor((d) => {
       const rgb = d.level === "critical" ? "239,68,68" : "249,115,22";
       return (t) => `rgba(${rgb},${1 - t})`;
     })
-    .ringMaxRadius(3.5)
-    .ringPropagationSpeed(1.5)
-    .ringRepeatPeriod(1000)
-    .ringAltitude(0.005);
+    .ringMaxRadius(3.5).ringPropagationSpeed(1.5)
+    .ringRepeatPeriod(1000).ringAltitude(0.005);
 
   threatGlobe.controls().autoRotate = false;
   threatGlobe.pointOfView({ lat: 25, lng: 20, altitude: 1.8 });
 
-  // Keep globe sized to container on window resize
   const ro = new ResizeObserver(() => {
     const cw = container.clientWidth;
     const ch = container.clientHeight;
-    if (threatGlobe && cw > 0 && ch > 0) {
-      threatGlobe.width(cw).height(ch);
-    }
+    if (threatGlobe && cw > 0 && ch > 0) threatGlobe.width(cw).height(ch);
   });
   ro.observe(container);
+
+  // 非同步載入國家邊界 + 標籤（載入後自動疊加）
+  try {
+    const geoData = await fetch(
+      "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson"
+    ).then((r) => r.json());
+
+    const countryThreatMap = buildCountryThreatMap();
+    const threatFillColors = {
+      critical: "rgba(239,68,68,0.14)",
+      high:     "rgba(249,115,22,0.11)",
+      medium:   "rgba(234,179,8,0.08)",
+      low:      "rgba(34,197,94,0.06)",
+    };
+
+    threatGlobe
+      // 國家邊界多邊形
+      .polygonsData(geoData.features)
+      .polygonCapColor((feat) => {
+        const level = countryThreatMap[feat.properties.name];
+        return level ? threatFillColors[level] : "rgba(180,210,255,0.025)";
+      })
+      .polygonSideColor(() => "transparent")
+      .polygonStrokeColor(() => "rgba(100,140,220,0.28)")
+      .polygonAltitude(0.001)
+      .polygonLabel(() => "")
+      // 國家名稱標籤
+      .labelsData(GLOBE_COUNTRY_LABELS)
+      .labelLat((d) => d.lat)
+      .labelLng((d) => d.lng)
+      .labelText((d) => d.name)
+      .labelSize((d) => d.sz)
+      .labelDotRadius(0)
+      .labelColor(() => "rgba(180,210,255,0.55)")
+      .labelResolution(3)
+      .labelAltitude(0.006);
+  } catch (e) {
+    console.warn("Globe country data load failed:", e);
+  }
 }
 
 function highlightThreatCard(id) {
