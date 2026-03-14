@@ -154,6 +154,188 @@
       background: rgba(255,255,255,0.06);
       font-size: 10px; text-transform: capitalize; color: var(--text-secondary);
     }
+    /* ══ Portfolio 重新設計樣式 ══ */
+
+    /* Demo 提示 */
+    .port-demo-banner {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(234,179,8,0.07); border: 1px solid rgba(234,179,8,0.2);
+      border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; font-size: 13px;
+    }
+    .demo-banner-label { font-weight: 700; color: #fbbf24; white-space: nowrap; }
+    .demo-banner-desc  { color: var(--text-secondary); flex: 1; font-size: 12px; }
+    .demo-banner-exit  {
+      padding: 5px 12px; border-radius: 6px; white-space: nowrap;
+      background: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.28);
+      color: #fbbf24; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+
+    /* 上方雙欄 */
+    .port-top-row {
+      display: grid; grid-template-columns: 320px 1fr; gap: 14px; margin-bottom: 14px;
+    }
+    .port-summary-card, .port-perf-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px;
+    }
+    .port-card-hdr {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;
+    }
+    .port-card-title {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 13px; font-weight: 600; color: var(--text-secondary);
+    }
+    .port-export-btn {
+      display: flex; align-items: center; gap: 5px; padding: 5px 10px;
+      border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      color: var(--text-secondary); font-size: 11px; cursor: pointer; transition: background 0.15s;
+    }
+    .port-export-btn:hover { background: rgba(255,255,255,0.09); color: var(--text-primary); }
+
+    /* 數字區塊 */
+    .port-total-block { margin-bottom: 10px; }
+    .port-total-label { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; letter-spacing: 0.03em; }
+    .port-total-num   { font-size: 28px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+    .port-active-block { margin-bottom: 14px; }
+    .port-sub-row  { display: flex; justify-content: space-between; align-items: center; }
+    .port-sub-label{ font-size: 12px; color: var(--text-muted); }
+    .port-sub-val  { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+
+    /* 現金區塊 */
+    .port-cash-block {
+      border-top: 1px solid var(--border); padding-top: 12px; margin-bottom: 14px;
+    }
+    .port-cash-row {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 7px;
+    }
+    .port-cash-label { flex: 1; }
+    .port-cash-amount { font-weight: 700; }
+    .port-chain-row {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; color: var(--text-secondary); padding-left: 2px; margin-bottom: 4px;
+    }
+    .port-chain-dot   { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .port-chain-amount{ margin-left: auto; }
+
+    /* 操作按鈕 */
+    .port-action-row { display: flex; gap: 7px; }
+    .port-act-btn {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+      padding: 8px 6px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      color: var(--text-primary); cursor: pointer; transition: background 0.15s;
+    }
+    .port-act-btn:hover  { background: rgba(255,255,255,0.09); }
+    .port-act-btn.primary{ background: var(--accent); border-color: var(--accent); color: #fff; }
+    .port-act-btn.primary:hover{ background: var(--accent-hover); }
+
+    /* 4 個績效指標 */
+    .port-metrics-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--border); margin-bottom: 0;
+    }
+    .port-metric {
+      padding: 12px 10px; border-right: 1px solid var(--border);
+    }
+    .port-metric:last-child { border-right: none; }
+    .port-metric-label { font-size: 10px; color: var(--text-muted); margin-bottom: 5px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .port-metric-value { font-size: 17px; font-weight: 700; }
+    .port-metric-value.up      { color: #22c55e; }
+    .port-metric-value.down    { color: #ef4444; }
+    .port-metric-value.neutral { color: var(--text-primary); }
+
+    /* P&L Calendar 折疊按鈕 */
+    .port-cal-link {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 2px; font-size: 12px; color: var(--text-secondary);
+      border-bottom: 1px solid var(--border); cursor: pointer; transition: color 0.15s;
+    }
+    .port-cal-link:hover { color: var(--text-primary); }
+    .cal-link-label { font-weight: 600; font-size: 13px; color: var(--text-primary); }
+    .cal-link-sub   { flex: 1; }
+    .cal-link-arrow { margin-left: auto; transition: transform 0.2s; }
+    .port-cal-link.cal-open .cal-link-arrow { transform: rotate(90deg); }
+
+    /* 持倉面板 */
+    .port-positions-wrap {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden; margin-top: 14px;
+    }
+    .port-pos-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; border-bottom: 1px solid var(--border);
+    }
+    .port-pos-tabs  { display: flex; }
+    .port-pos-tab   {
+      display: flex; align-items: center; gap: 7px; padding: 14px 16px;
+      font-size: 13px; font-weight: 500; color: var(--text-secondary);
+      background: none; border: none; border-bottom: 2px solid transparent;
+      cursor: pointer; transition: color 0.15s, border-color 0.15s; white-space: nowrap;
+    }
+    .port-pos-tab:hover  { color: var(--text-primary); }
+    .port-pos-tab.active { color: var(--text-primary); border-bottom-color: var(--accent); }
+    .port-pos-search {
+      display: flex; align-items: center; gap: 7px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: 7px; padding: 6px 11px;
+    }
+    .port-pos-search input {
+      background: none; border: none; outline: none;
+      color: var(--text-primary); font-size: 12px; width: 150px;
+    }
+    .port-pos-search input::placeholder { color: var(--text-muted); }
+
+    /* 持倉表格 v2 */
+    .pos-table-v2 { width: 100%; border-collapse: collapse; }
+    .pos-table-v2 th {
+      padding: 9px 16px; text-align: left; font-size: 11px; font-weight: 600;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
+      background: rgba(255,255,255,0.01); border-bottom: 1px solid var(--border);
+    }
+    .pos-table-v2 th:not(:first-child) { text-align: right; }
+    .pos-table-v2 td {
+      padding: 13px 16px; font-size: 13px;
+      border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle;
+    }
+    .pos-table-v2 td:not(:first-child) { text-align: right; }
+    .pos-table-v2 tr:last-child td     { border-bottom: none; }
+    .pos-table-v2 tr:hover td          { background: rgba(255,255,255,0.02); }
+    .pos-market-cell { display: flex; align-items: flex-start; gap: 10px; }
+    .pos-platform-icon {
+      width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0; margin-top: 1px;
+      background: var(--accent); display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700; color: #fff;
+    }
+    .pos-market-name { font-size: 13px; font-weight: 500; color: var(--text-primary); line-height: 1.4; margin-bottom: 3px; }
+    .pos-market-sub  { display: flex; align-items: center; gap: 6px; }
+    .pos-shares-label{ font-size: 11px; color: var(--text-muted); }
+    .pos-side-badge  {
+      display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 4px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+    }
+    .pos-side-badge.yes { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .pos-side-badge.no  { background: rgba(239,68,68,0.15);  color: #f87171; }
+    .pos-num  { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+    .pos-val  { font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+    .pos-sub  { font-size: 11px; margin-top: 2px; }
+    .pos-sub.up   { color: #4ade80; }
+    .pos-sub.down { color: #f87171; }
+    .pos-sell-btn {
+      padding: 5px 14px; border-radius: 6px; white-space: nowrap;
+      background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.22);
+      color: #f87171; font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .pos-sell-btn:hover { background: rgba(239,68,68,0.2); }
+    .pos-empty-state {
+      padding: 48px; text-align: center; color: var(--text-muted); font-size: 13px;
+    }
+    @media (max-width: 860px) {
+      .port-top-row { grid-template-columns: 1fr; }
+      .port-metrics-row { grid-template-columns: repeat(2, 1fr); }
+    }
+
     /* Globe.gl tooltip 覆寫 */
     .scene-tooltip {
       background: #1a1a24 !important; border: 1px solid #2a2a38 !important;
@@ -285,47 +467,116 @@
         <!-- ══ PORTFOLIO 視圖 ══ -->
         <div id="view-portfolio" style="display:none">
 
-          <!-- 標題列 -->
-          <div class="port-header">
-            <div class="port-title-wrap">
-              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-              </svg>
-              <h2 class="port-title">My Portfolio</h2>
-              <span class="demo-badge">Demo Mode</span>
-            </div>
+          <!-- Demo 提示列 -->
+          <div class="port-demo-banner">
+            <svg width="13" height="13" fill="#fbbf24" viewBox="0 0 20 20"><path d="M10 2a1 1 0 01.894.553l7 14A1 1 0 0117 18H3a1 1 0 01-.894-1.447l7-14A1 1 0 0110 2zm0 2.618L4.236 16h11.528L10 4.618zM10 13a1 1 0 110 2 1 1 0 010-2zm0-5a1 1 0 011 1v3a1 1 0 11-2 0V9a1 1 0 011-1z"/></svg>
+            <span class="demo-banner-label">Demo Mode</span>
+            <span class="demo-banner-desc">Viewing with sample data. Connect wallet to see your real portfolio.</span>
+            <button class="demo-banner-exit">Exit Demo</button>
           </div>
 
-          <!-- 統計卡片 -->
-          <div class="port-stats-grid" id="portfolio-stats"></div>
+          <!-- 上方雙欄：Summary + Performance -->
+          <div class="port-top-row">
 
-          <!-- 資金曲線 -->
-          <div class="port-section">
-            <div class="port-section-header">
-              <h3 class="port-section-title">Equity Curve</h3>
-              <div class="equity-range-btns">
-                <button class="equity-range-btn" data-range="1W">1W</button>
-                <button class="equity-range-btn active" data-range="1M">1M</button>
-                <button class="equity-range-btn" data-range="3M">3M</button>
-                <button class="equity-range-btn" data-range="All">All</button>
+            <!-- 左：Portfolio Summary -->
+            <div class="port-summary-card">
+              <div class="port-card-hdr">
+                <span class="port-card-title">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                  Portfolio
+                </span>
+                <button class="port-export-btn">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                  Export Wallet
+                </button>
+              </div>
+              <div class="port-total-block">
+                <div class="port-total-label">Total Portfolio Value</div>
+                <div class="port-total-num" id="port-total-num">--</div>
+              </div>
+              <div class="port-active-block">
+                <div class="port-sub-row">
+                  <span class="port-sub-label">Active Positions</span>
+                  <span class="port-sub-val" id="port-active-num">--</span>
+                </div>
+              </div>
+              <div class="port-cash-block">
+                <div class="port-cash-row">
+                  <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--text-muted)"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3M3 16v3a2 2 0 002 2h3m10 0h3a2 2 0 002-2v-3"/></svg>
+                  <span class="port-cash-label">Total Cash</span>
+                  <span class="port-cash-amount" id="port-cash-num">--</span>
+                </div>
+                <div class="port-chain-row">
+                  <span class="port-chain-dot" style="background:#6366f1"></span>
+                  <span>Polymarket USDC</span>
+                  <span class="port-chain-amount" id="port-usdc-num">--</span>
+                </div>
+              </div>
+              <div class="port-action-row">
+                <button class="port-act-btn primary">
+                  <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  Deposit
+                </button>
+                <button class="port-act-btn">
+                  <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  Withdraw
+                </button>
+                <button class="port-act-btn">
+                  <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 11V7a4 4 0 014-4h8M20 13v4a4 4 0 01-4 4H8"/><polyline points="16 7 20 7 20 11"/><polyline points="8 17 4 17 4 13"/></svg>
+                  Bridge
+                </button>
               </div>
             </div>
-            <div id="equity-chart-wrap" class="equity-chart-wrap"></div>
+
+            <!-- 右：Performance -->
+            <div class="port-perf-card">
+              <div class="port-card-hdr">
+                <span class="port-card-title">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  Performance
+                </span>
+                <div class="equity-range-btns">
+                  <button class="equity-range-btn" data-range="1D">1D</button>
+                  <button class="equity-range-btn" data-range="1W">1W</button>
+                  <button class="equity-range-btn active" data-range="1M">1M</button>
+                  <button class="equity-range-btn" data-range="All">All</button>
+                </div>
+              </div>
+              <!-- 4 指標 -->
+              <div class="port-metrics-row" id="portfolio-stats"></div>
+              <!-- P&L Calendar 折疊入口 -->
+              <div class="port-cal-link" id="port-cal-toggle">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span class="cal-link-label">P&amp;L Calendar</span>
+                <span class="cal-link-sub">View monthly breakdown</span>
+                <svg class="cal-link-arrow" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+              <!-- 圖表 -->
+              <div id="equity-chart-wrap" class="equity-chart-wrap"></div>
+            </div>
+
           </div>
 
-          <!-- 盈虧日曆 -->
-          <div class="port-section">
-            <div class="port-section-header">
-              <h3 class="port-section-title">P&amp;L Calendar</h3>
-            </div>
+          <!-- P&L 日曆（可折疊）-->
+          <div id="port-calendar-section" class="port-section" style="display:none">
             <div id="pnl-calendar"></div>
           </div>
 
-          <!-- 持倉列表 -->
-          <div class="port-section">
-            <div class="port-section-header">
-              <h3 class="port-section-title">Open Positions</h3>
-              <span class="pos-count-badge" id="pos-count-badge">6 open</span>
+          <!-- 持倉 / 訂單 / 歷史 -->
+          <div class="port-positions-wrap">
+            <div class="port-pos-topbar">
+              <div class="port-pos-tabs">
+                <button class="port-pos-tab active" data-tab="positions">
+                  Open Positions
+                  <span class="pos-count-badge" id="pos-count-badge">6</span>
+                </button>
+                <button class="port-pos-tab" data-tab="orders">Pending Orders</button>
+                <button class="port-pos-tab" data-tab="history">Trade History</button>
+              </div>
+              <div class="port-pos-search">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <input type="text" id="port-pos-search-input" placeholder="Search markets..."/>
+              </div>
             </div>
             <div id="positions-table"></div>
           </div>

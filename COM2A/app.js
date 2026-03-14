@@ -1935,47 +1935,57 @@ const OPEN_POSITIONS = [
 
 /** 計算投資組合統計 */
 const PORT_STATS = (() => {
-  const total = EQUITY_DATA.at(-1).value;
-  const start = EQUITY_DATA[0].value;
-  const gain  = total - start;
+  const total    = EQUITY_DATA.at(-1).value;
+  const start    = EQUITY_DATA[0].value;
+  const gain     = total - start;
+  const posValue = OPEN_POSITIONS.reduce((s, p) => s + p.shares * p.current, 0);
+  const stake    = OPEN_POSITIONS.reduce((s, p) => s + p.shares * p.avgEntry, 0);
   const unrealized = OPEN_POSITIONS.reduce((s, p) => s + p.shares * (p.current - p.avgEntry), 0);
   const realized   = gain - unrealized;
-  const posValue   = OPEN_POSITIONS.reduce((s, p) => s + p.shares * p.current, 0);
+  const roi        = +((gain / start) * 100).toFixed(2);
+  const volume     = +(stake * 4.8).toFixed(2); // 模擬總交易量
   return {
     total:      +total.toFixed(2),
     balance:    +Math.max(0, total - posValue).toFixed(2),
+    posValue:   +posValue.toFixed(2),
     unrealized: +unrealized.toFixed(2),
     realized:   +realized.toFixed(2),
+    roi,
+    volume,
   };
 })();
 
 let equityRange = "1M";
 let _eqState = null; // 給 hover handler 用
 
-/** 渲染統計卡片 */
+/** 渲染左側 Summary 面板數字 */
+function renderPortfolioSummary() {
+  const s = PORT_STATS;
+  const setText = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+  setText("port-total-num",  fmtUSD(s.total));
+  setText("port-active-num", fmtUSD(s.posValue));
+  setText("port-cash-num",   fmtUSD(s.balance));
+  setText("port-usdc-num",   fmtUSD(s.balance));
+}
+
+/** 渲染右側 4 個績效指標 */
 function renderPortfolioStats() {
   const el = document.getElementById("portfolio-stats");
   if (!el) return;
   const s = PORT_STATS;
-  const totalGain = s.total - EQUITY_DATA[0].value;
-  const gainPct   = ((totalGain / EQUITY_DATA[0].value) * 100).toFixed(2);
 
-  const card = (label, val, sub, dir) => `
-    <div class="port-stat-card">
-      <div class="port-stat-label">${label}</div>
-      <div class="port-stat-value">${val}</div>
-      ${sub ? `<div class="port-stat-sub ${dir === 1 ? "up" : dir === -1 ? "down" : ""}">${sub}</div>` : ""}
+  const metric = (label, val, cls) => `
+    <div class="port-metric">
+      <div class="port-metric-label">${label}</div>
+      <div class="port-metric-value ${cls}">${val}</div>
     </div>`;
 
+  const sign = (v) => (v >= 0 ? "+" : "");
   el.innerHTML = [
-    card("Total Assets",     fmtUSD(s.total),
-      `${totalGain >= 0 ? "+" : ""}${fmtUSD(totalGain)} (${totalGain >= 0 ? "+" : ""}${gainPct}%) all time`,
-      totalGain >= 0 ? 1 : -1),
-    card("Available Balance", fmtUSD(s.balance), "Ready to trade"),
-    card("Unrealized P&L",   `${s.unrealized >= 0 ? "+" : ""}${fmtUSD(s.unrealized)}`,
-      "From open positions", s.unrealized >= 0 ? 1 : -1),
-    card("Realized P&L",     `${s.realized >= 0 ? "+" : ""}${fmtUSD(s.realized)}`,
-      "Settled trades", s.realized >= 0 ? 1 : -1),
+    metric("Realized P&L",   `${sign(s.realized)}${fmtUSD(s.realized)}`,   s.realized   >= 0 ? "up" : "down"),
+    metric("Unrealized P&L", `${sign(s.unrealized)}${fmtUSD(s.unrealized)}`,s.unrealized >= 0 ? "up" : "down"),
+    metric("Total ROI",      `${sign(s.roi)}${s.roi}%`,                      s.roi        >= 0 ? "up" : "down"),
+    metric("Total Volume",   fmtUSD(s.volume), "neutral"),
   ].join("");
 }
 
@@ -2223,61 +2233,125 @@ function renderPnLCalendar() {
   });
 }
 
-/** 渲染持倉表 */
-function renderPositionsTable() {
+/** 渲染持倉表 v2（Chance 風格）*/
+function renderPositionsTable(filter = "") {
   const el = document.getElementById("positions-table");
   if (!el) return;
 
-  const rows = OPEN_POSITIONS.map((p) => {
-    const pnl    = p.shares * (p.current - p.avgEntry);
-    const pnlPct = (((p.current - p.avgEntry) / p.avgEntry) * 100).toFixed(1);
-    const isUp   = pnl >= 0;
+  const filtered = OPEN_POSITIONS.filter((p) =>
+    !filter || p.market.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  if (filtered.length === 0) {
+    el.innerHTML = `<div class="pos-empty-state">No positions found</div>`;
+    return;
+  }
+
+  const rows = filtered.map((p) => {
+    const stake   = +(p.shares * p.avgEntry).toFixed(2);
+    const value   = +(p.shares * p.current).toFixed(2);
+    const pnl     = +(value - stake).toFixed(2);
+    const pnlPct  = (((p.current - p.avgEntry) / p.avgEntry) * 100).toFixed(1);
+    const expProfit = +(p.shares * (1 - p.avgEntry)).toFixed(2); // full win payout - stake
+    const isUp    = pnl >= 0;
+
     return `
-      <tr class="pos-row">
-        <td class="pos-market">${p.market}</td>
-        <td><span class="pos-side ${p.side === "YES" ? "yes" : "no"}">${p.side}</span></td>
-        <td class="pos-num">${p.shares}</td>
-        <td class="pos-num">${(p.avgEntry * 100).toFixed(0)}¢</td>
-        <td class="pos-num">${(p.current * 100).toFixed(0)}¢</td>
-        <td class="pos-num ${isUp ? "profit" : "loss"}">
-          ${isUp ? "+" : ""}${fmtUSD(pnl)}
-          <span class="pos-pct">${isUp ? "+" : ""}${pnlPct}%</span>
+      <tr>
+        <td>
+          <div class="pos-market-cell">
+            <div class="pos-platform-icon">P</div>
+            <div>
+              <div class="pos-market-name">${p.market}</div>
+              <div class="pos-market-sub">
+                <span class="pos-shares-label">${p.shares} shares</span>
+                <span class="pos-side-badge ${p.side === "YES" ? "yes" : "no"}">${p.side}</span>
+              </div>
+            </div>
+          </div>
         </td>
-        <td class="pos-end">${p.endDate}</td>
+        <td class="pos-num">${(p.avgEntry * 100).toFixed(0)}¢</td>
+        <td class="pos-num">${(p.current  * 100).toFixed(0)}¢</td>
+        <td class="pos-num">${fmtUSD(stake)}</td>
+        <td class="pos-num">+${fmtUSD(expProfit)}</td>
+        <td>
+          <div class="pos-val">${fmtUSD(value)}</div>
+          <div class="pos-sub ${isUp ? "up" : "down"}">${isUp ? "+" : ""}${fmtUSD(pnl)} (${isUp ? "+" : ""}${pnlPct}%)</div>
+        </td>
+        <td>
+          <button class="pos-sell-btn">Sell</button>
+        </td>
       </tr>`;
   });
 
   el.innerHTML = `
-    <table class="pos-table">
+    <table class="pos-table-v2">
       <thead>
         <tr>
-          <th>Market</th><th>Side</th><th>Shares</th>
-          <th>Avg Entry</th><th>Current</th><th>P&L</th><th>Closes</th>
+          <th>Market</th>
+          <th>Avg Entry</th>
+          <th>Current</th>
+          <th>Stake</th>
+          <th>Expected Profit</th>
+          <th>Value</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>${rows.join("")}</tbody>
     </table>`;
 }
 
-/** 初始化 Portfolio（Range 按鈕事件）*/
+/** 初始化 Portfolio（Range 按鈕 + Tabs + Calendar toggle + 搜尋）*/
 function initPortfolioView() {
+  // 時間範圍按鈕
   document.querySelectorAll(".equity-range-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      equityRange = btn.dataset.range;
+      equityRange = btn.dataset.range ?? "1M";
       document.querySelectorAll(".equity-range-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       renderEquityChart();
     });
+  });
+
+  // P&L Calendar 折疊切換
+  document.getElementById("port-cal-toggle")?.addEventListener("click", () => {
+    const sec = document.getElementById("port-calendar-section");
+    const btn = document.getElementById("port-cal-toggle");
+    if (!sec) return;
+    const isOpen = sec.style.display !== "none";
+    sec.style.display = isOpen ? "none" : "block";
+    btn?.classList.toggle("cal-open", !isOpen);
+    if (!isOpen) renderPnLCalendar();
+  });
+
+  // 持倉 Tabs（僅 UI 切換，demo 只有 positions）
+  document.querySelectorAll(".port-pos-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".port-pos-tab").forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      // 僅 positions tab 有資料，其餘顯示空
+      if (tab.dataset.tab === "positions") {
+        renderPositionsTable();
+      } else {
+        const el = document.getElementById("positions-table");
+        if (el) el.innerHTML = `<div class="pos-empty-state">No ${tab.dataset.tab} data in demo mode</div>`;
+      }
+    });
+  });
+
+  // 持倉搜尋
+  document.getElementById("port-pos-search-input")?.addEventListener("input", (e) => {
+    renderPositionsTable(e.target.value);
   });
 }
 
 /** 主入口：渲染整個 Portfolio 頁面 */
 function renderPortfolioView() {
   initPortfolioView();
+  renderPortfolioSummary();
   renderPortfolioStats();
   renderEquityChart();
-  renderPnLCalendar();
   renderPositionsTable();
+  // P&L Calendar 預設收起，點擊才展開
 }
 
 // ===== 初始化 =====
