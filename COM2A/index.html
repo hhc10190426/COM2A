@@ -50,12 +50,15 @@
 
     /* ── Intel / Threat Map 視圖 ── */
     .threat-map-container {
-      height: 400px;
+      height: 480px;
       border-radius: 12px;
       overflow: hidden;
       border: 1px solid var(--border, #2a2a38);
       margin-bottom: 16px;
+      background: #0a0a10;
+      position: relative;
     }
+    .threat-map-container canvas { display: block; }
     .threat-filter-section { margin-bottom: 4px; }
     .threat-filter-label {
       font-size: 10px;
@@ -130,23 +133,17 @@
       background: rgba(255,255,255,0.06);
       font-size: 10px; text-transform: capitalize; color: var(--text-secondary);
     }
-    /* Leaflet dark popup override */
-    .leaflet-container { background: #0f0f13 !important; font-family: Inter, sans-serif !important; }
-    .leaflet-popup-content-wrapper {
-      background: #1a1a24 !important; color: #e8e8f0 !important;
-      border: 1px solid #2a2a38 !important; border-radius: 10px !important;
+    /* Globe.gl tooltip 覆寫 */
+    .scene-tooltip {
+      background: #1a1a24 !important; border: 1px solid #2a2a38 !important;
+      border-radius: 10px !important; color: #e8e8f0 !important;
+      font-family: Inter, sans-serif !important;
       box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
-    }
-    .leaflet-popup-tip { background: #1a1a24 !important; }
-    .leaflet-popup-close-button { color: #8888a8 !important; }
-    .leaflet-control-zoom a {
-      background: #1a1a24 !important; color: #e8e8f0 !important;
-      border-color: #2a2a38 !important;
+      pointer-events: none !important;
     }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 </head>
 <body>
   <!-- 頂部導覽列 -->
@@ -600,7 +597,7 @@
     </div>
   </main>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="app.js?v=30"></script>
+  <script src="https://unpkg.com/globe.gl/dist/globe.gl.min.js"></script>
+  <script src="app.js?v=31"></script>
 </body>
 </html>
