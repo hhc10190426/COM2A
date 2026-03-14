@@ -2342,6 +2342,43 @@ function initPortfolioView() {
   document.getElementById("port-pos-search-input")?.addEventListener("input", (e) => {
     renderPositionsTable(e.target.value);
   });
+
+  // 頭貼上傳
+  const avatarEl    = document.getElementById("port-avatar");
+  const avatarInput = document.getElementById("port-avatar-input");
+  const avatarBtn   = document.getElementById("port-avatar-btn");
+
+  const triggerAvatarUpload = () => avatarInput?.click();
+  avatarEl?.addEventListener("click", triggerAvatarUpload);
+  avatarBtn?.addEventListener("click", triggerAvatarUpload);
+
+  avatarInput?.addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (!avatarEl) return;
+      avatarEl.innerHTML = `<img src="${ev.target?.result}" alt="avatar"/>
+        <input type="file" id="port-avatar-input" accept="image/*" style="display:none"/>`;
+      avatarEl.querySelector("input")?.addEventListener("change", (e2) => {
+        const f2 = e2.target.files?.[0];
+        if (!f2) return;
+        const r2 = new FileReader();
+        r2.onload = (ev2) => {
+          const img = avatarEl.querySelector("img");
+          if (img) img.src = String(ev2.target?.result);
+        };
+        r2.readAsDataURL(f2);
+      });
+      avatarEl.onclick = () => avatarEl.querySelector("input")?.click();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // 暱稱 Enter 鍵取消焦點
+  document.getElementById("port-nickname")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); e.target?.blur(); }
+  });
 }
 
 /** 主入口：渲染整個 Portfolio 頁面 */
