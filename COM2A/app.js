@@ -1133,23 +1133,6 @@ function showToast(message) {
   }, 3500);
 }
 
-// ===== 免責聲明 Modal =====
-function initModal() {
-  const modal     = document.getElementById("disclaimer-modal");
-  const acceptBtn = document.getElementById("modal-accept");
-  const declineBtn = document.getElementById("modal-decline");
-  if (sessionStorage.getItem("disclaimer-accepted")) {
-    modal.classList.add("hidden");
-    return;
-  }
-  acceptBtn.addEventListener("click", () => {
-    sessionStorage.setItem("disclaimer-accepted", "true");
-    modal.classList.add("hidden");
-  });
-  declineBtn.addEventListener("click", () => {
-    setTimeout(() => { window.location.href = "https://www.google.com"; }, 300);
-  });
-}
 
 // ===== 備用模擬資料（API 失敗時使用）=====
 const FALLBACK_MARKETS = [
@@ -2294,7 +2277,6 @@ function renderPortfolioView() {
 
 // ===== 初始化 =====
 document.addEventListener("DOMContentLoaded", () => {
-  initModal();
   renderNews(NEWS_DATA);
   initFilters();
   initSearch();
