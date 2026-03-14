@@ -187,69 +187,69 @@
     }
     /* 頭貼 + 暱稱 */
     .port-profile-block {
-      display: flex; align-items: center; gap: 12px;
-      padding: 14px 16px; margin: -20px -20px 16px;
-      background: rgba(99,102,241,0.06);
+      display: flex; align-items: center; gap: 14px;
+      padding: 18px 20px 16px; margin: -20px -20px 14px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(99,102,241,0.04) 100%);
       border-bottom: 1px solid var(--border);
       border-radius: 14px 14px 0 0;
       position: relative;
     }
     .port-avatar {
-      width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
-      background: rgba(99,102,241,0.2); border: 2px solid rgba(99,102,241,0.4);
+      width: 60px; height: 60px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(99,102,241,0.2); border: 2.5px solid rgba(99,102,241,0.5);
       display: flex; align-items: center; justify-content: center;
       color: var(--accent); overflow: hidden; cursor: pointer;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .port-avatar:hover { border-color: var(--accent); }
+    .port-avatar:hover { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(99,102,241,0.15); }
     .port-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
     .port-profile-info { flex: 1; min-width: 0; }
     .port-nickname {
-      font-size: 14px; font-weight: 700; color: var(--text-primary);
-      outline: none; border-radius: 4px; padding: 1px 4px; margin-left: -4px;
+      font-size: 17px; font-weight: 700; color: var(--text-primary);
+      outline: none; border-radius: 4px; padding: 1px 5px; margin-left: -5px;
       cursor: text; transition: background 0.15s;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .port-nickname:hover   { background: rgba(255,255,255,0.06); }
-    .port-nickname:focus   { background: rgba(255,255,255,0.08); }
+    .port-nickname:focus   { background: rgba(255,255,255,0.09); }
     .port-profile-badge {
       display: flex; align-items: center; gap: 5px;
-      font-size: 11px; color: var(--text-muted); margin-top: 3px;
+      font-size: 11px; color: var(--text-muted); margin-top: 4px;
     }
     .port-badge-dot {
-      width: 5px; height: 5px; border-radius: 50%; background: #fbbf24;
-      box-shadow: 0 0 5px rgba(251,191,36,0.6);
+      width: 6px; height: 6px; border-radius: 50%; background: #fbbf24;
+      box-shadow: 0 0 6px rgba(251,191,36,0.7);
     }
     .port-edit-hint {
       display: flex; align-items: center; justify-content: center;
-      width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
+      width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
       background: rgba(255,255,255,0.05); border: 1px solid var(--border);
       color: var(--text-muted); cursor: pointer; transition: background 0.15s, color 0.15s;
     }
     .port-edit-hint:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
 
-    /* 數字區塊 */
-    .port-total-block { margin-bottom: 10px; }
-    .port-total-label { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; letter-spacing: 0.03em; }
-    .port-total-num   { font-size: 28px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
-    .port-active-block { margin-bottom: 14px; }
+    /* 數字區塊 — 縮小間距 */
+    .port-total-block { margin-bottom: 6px; }
+    .port-total-label { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; letter-spacing: 0.03em; }
+    .port-total-num   { font-size: 26px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+    .port-active-block { margin-bottom: 10px; }
     .port-sub-row  { display: flex; justify-content: space-between; align-items: center; }
     .port-sub-label{ font-size: 12px; color: var(--text-muted); }
-    .port-sub-val  { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+    .port-sub-val  { font-size: 15px; font-weight: 600; color: var(--text-primary); }
 
-    /* 現金區塊 */
+    /* 現金區塊 — 縮小間距 */
     .port-cash-block {
-      border-top: 1px solid var(--border); padding-top: 12px; margin-bottom: 14px;
+      border-top: 1px solid var(--border); padding-top: 10px; margin-bottom: 12px;
     }
     .port-cash-row {
       display: flex; align-items: center; gap: 7px;
-      font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 7px;
+      font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 5px;
     }
     .port-cash-label { flex: 1; }
     .port-cash-amount { font-weight: 700; }
     .port-chain-row {
       display: flex; align-items: center; gap: 7px;
-      font-size: 12px; color: var(--text-secondary); padding-left: 2px; margin-bottom: 4px;
+      font-size: 12px; color: var(--text-secondary); padding-left: 2px; margin-bottom: 2px;
     }
     .port-chain-dot   { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
     .port-chain-amount{ margin-left: auto; }
@@ -534,7 +534,7 @@
                 </button>
               </div>
 
-              <div class="port-card-hdr" style="margin-bottom:14px">
+              <div class="port-card-hdr" style="margin-bottom:8px">
                 <span class="port-card-title">
                   <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
                   Portfolio
