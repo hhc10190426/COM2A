@@ -1259,15 +1259,18 @@ function updateWatchlistBadge() {
 let showWatchlistOnly = false;
 function initWatchlistToggle() {
   const btn = document.getElementById("watchlist-toggle");
-  const navBtn = document.getElementById("btn-watchlist-nav");
+  const navWatchlist = document.getElementById("nav-watchlist");
   const handler = () => {
     showWatchlistOnly = !showWatchlistOnly;
     btn?.classList.toggle("wl-active", showWatchlistOnly);
-    navBtn?.classList.toggle("active", showWatchlistOnly);
+    navWatchlist?.classList.toggle("wl-active", showWatchlistOnly);
     applyCurrentFilters();
   };
   btn?.addEventListener("click", handler);
-  navBtn?.addEventListener("click", handler);
+  navWatchlist?.addEventListener("click", (e) => {
+    e.preventDefault();
+    handler();
+  });
 }
 
 function applyCurrentFilters() {
@@ -1855,7 +1858,7 @@ function switchView(view) {
   ["view-events", "view-sports", "view-portfolio", "view-crypto"].forEach((id) =>
     document.getElementById(id)?.style.setProperty("display", "none")
   );
-  ["nav-events", "nav-sports", "nav-portfolio", "nav-crypto"].forEach((id) =>
+  ["nav-events", "nav-sports", "nav-crypto", "btn-watchlist-nav"].forEach((id) =>
     document.getElementById(id)?.classList.remove("active")
   );
 
@@ -1876,7 +1879,7 @@ function switchView(view) {
     if (!sportsLoaded) { sportsLoaded = true; loadSportsView(); }
   } else if (view === "portfolio") {
     document.getElementById("view-portfolio")?.style.setProperty("display", "block");
-    document.getElementById("nav-portfolio")?.classList.add("active");
+    document.getElementById("btn-watchlist-nav")?.classList.add("active");
     if (!portfolioLoaded) { portfolioLoaded = true; renderPortfolioView(); }
   } else if (view === "crypto") {
     document.getElementById("view-crypto")?.style.setProperty("display", "block");
@@ -1889,11 +1892,14 @@ function switchView(view) {
 }
 
 function initNavigation() {
-  ["events", "crypto", "sports", "portfolio"].forEach((view) => {
+  ["events", "crypto", "sports"].forEach((view) => {
     document.getElementById(`nav-${view}`)?.addEventListener("click", (e) => {
       e.preventDefault();
       switchView(view);
     });
+  });
+  document.getElementById("btn-watchlist-nav")?.addEventListener("click", () => {
+    switchView("portfolio");
   });
 }
 
