@@ -1835,20 +1835,21 @@ let currentView = "events";
 let sportsLoaded = false;
 let portfolioLoaded = false;
 let cryptoLoaded = false;
+let intelLoaded = false;
 
 function switchView(view) {
   currentView = view;
-  ["view-events", "view-sports", "view-portfolio", "view-crypto"].forEach((id) =>
+  ["view-events", "view-sports", "view-portfolio", "view-crypto", "view-intel"].forEach((id) =>
     document.getElementById(id)?.style.setProperty("display", "none")
   );
-  ["nav-events", "nav-sports", "nav-crypto", "btn-watchlist-nav"].forEach((id) =>
+  ["nav-events", "nav-sports", "nav-crypto", "nav-intel", "btn-watchlist-nav"].forEach((id) =>
     document.getElementById(id)?.classList.remove("active")
   );
 
-  // Portfolio 全寬（隱藏側邊欄）
+  // Portfolio / Intel 全寬（隱藏側邊欄）
   const grid    = document.querySelector(".content-grid");
   const sidebar = document.querySelector(".sidebar");
-  if (view === "portfolio") {
+  if (view === "portfolio" || view === "intel") {
     grid?.classList.add("portfolio-mode");
     if (sidebar) sidebar.style.display = "none";
   } else {
@@ -1868,6 +1869,11 @@ function switchView(view) {
     document.getElementById("view-crypto")?.style.setProperty("display", "block");
     document.getElementById("nav-crypto")?.classList.add("active");
     if (!cryptoLoaded) { cryptoLoaded = true; loadCryptoView(); }
+  } else if (view === "intel") {
+    document.getElementById("view-intel")?.style.setProperty("display", "block");
+    document.getElementById("nav-intel")?.classList.add("active");
+    if (!intelLoaded) { intelLoaded = true; loadIntelView(); }
+    else { setTimeout(() => threatLeafletMap?.invalidateSize(), 100); }
   } else {
     document.getElementById("view-events")?.style.setProperty("display", "block");
     document.getElementById("nav-events")?.classList.add("active");
@@ -1875,7 +1881,7 @@ function switchView(view) {
 }
 
 function initNavigation() {
-  ["events", "crypto", "sports"].forEach((view) => {
+  ["events", "crypto", "sports", "intel"].forEach((view) => {
     document.getElementById(`nav-${view}`)?.addEventListener("click", (e) => {
       e.preventDefault();
       switchView(view);
@@ -2343,4 +2349,216 @@ function initScrollableTabs(containerId) {
   new MutationObserver(updateArrows).observe(container, { childList: true });
 
   updateArrows();
+}
+
+// ═══════════════════════════════════════════════════
+// ===== INTEL / GLOBAL THREAT MAP =====
+// ═══════════════════════════════════════════════════
+
+/** @type {import('leaflet').Map|null} */
+let threatLeafletMap = null;
+
+/** @type {{ marker: import('leaflet').CircleMarker, ev: ThreatEvent }[]} */
+let threatMarkerList = [];
+
+let activeThreatLevel = "all";
+let activeThreatCat   = "all";
+
+/**
+ * @typedef {{ id:number, title:string, location:string, lat:number, lng:number,
+ *   level:'critical'|'high'|'medium'|'low', category:string, time:string, description:string }} ThreatEvent
+ */
+
+/** @type {ThreatEvent[]} */
+const THREAT_EVENTS = [
+  { id:1,  title:"Frontline Artillery Exchange",       location:"Zaporizhzhia, Ukraine",      lat:47.84, lng:35.14, level:"critical", category:"conflict",   time:"18m ago",  description:"Heavy shelling reported along 40 km front. Three villages ordered to evacuate." },
+  { id:2,  title:"Ceasefire Talks Collapse",           location:"Khartoum, Sudan",            lat:15.50, lng:32.56, level:"critical", category:"conflict",   time:"1h ago",   description:"SAF–RSF negotiations break down. Fighting resumes across Omdurman district." },
+  { id:3,  title:"Ballistic Missile Launch Detected",  location:"North Korea",                lat:39.03, lng:125.75,level:"critical", category:"military",   time:"2h ago",   description:"ICBM-class launch detected by US Indo-Pacific Command. Fell into Sea of Japan." },
+  { id:4,  title:"Suicide Bombing — Market District",  location:"Mogadishu, Somalia",         lat:2.05,  lng:45.34, level:"critical", category:"terrorism",  time:"3h ago",   description:"Al-Shabaab claims responsibility. 14 killed, 29 wounded." },
+  { id:5,  title:"Naval Stand-off in Disputed Waters", location:"South China Sea",            lat:15.20, lng:114.30,level:"high",     category:"military",   time:"2h ago",   description:"PLA Coast Guard vessels water-cannon Philippine resupply vessel near Scarborough Shoal." },
+  { id:6,  title:"Mass Anti-Government Protests",      location:"Tbilisi, Georgia",           lat:41.69, lng:44.80, level:"high",     category:"protest",    time:"4h ago",   description:"Estimated 80,000 march on parliament demanding snap elections." },
+  { id:7,  title:"Infrastructure Cyberattack",         location:"Frankfurt, Germany",         lat:50.11, lng:8.68,  level:"high",     category:"cyber",      time:"5h ago",   description:"Critical energy grid operator reports coordinated intrusion. Power disruptions in three states." },
+  { id:8,  title:"Earthquake Magnitude 6.3",           location:"Herat, Afghanistan",         lat:34.35, lng:62.20, level:"high",     category:"disaster",   time:"3h ago",   description:"Strong quake collapses dozens of buildings. Rescue operations underway." },
+  { id:9,  title:"Oil Pipeline Sabotage",              location:"Niger Delta, Nigeria",       lat:5.33,  lng:6.45,  level:"high",     category:"conflict",   time:"6h ago",   description:"Armed group destroys 2 km section of Trans-Niger Pipeline. Spill ongoing." },
+  { id:10, title:"Coup Attempt Suppressed",            location:"Naypyidaw, Myanmar",         lat:19.75, lng:96.13, level:"high",     category:"military",   time:"7h ago",   description:"Military faction loyal to ousted general seized state broadcaster for 4 hours before being repelled." },
+  { id:11, title:"Cross-Border Drone Strike",          location:"Southern Lebanon",           lat:33.27, lng:35.57, level:"high",     category:"military",   time:"8h ago",   description:"IDF drones target weapons depot near Nabatieh. Hezbollah confirms casualties." },
+  { id:12, title:"Armed Group Seizes Border Post",     location:"Eastern DRC",               lat:-0.52, lng:29.23, level:"high",     category:"conflict",   time:"9h ago",   description:"M23 rebels capture Bunagana crossing, cutting supply route to North Kivu." },
+  { id:13, title:"Typhoon Landfall Warning Cat.4",     location:"Luzon, Philippines",         lat:16.00, lng:121.00,level:"high",     category:"disaster",   time:"4h ago",   description:"Typhoon Maria expected to make landfall in 12 hours. 500,000 under evacuation order." },
+  { id:14, title:"General Strike Paralyzes Capital",   location:"Buenos Aires, Argentina",    lat:-34.60,lng:-58.38,level:"medium",   category:"protest",    time:"10h ago",  description:"Unions shut down transport and public services over austerity measures." },
+  { id:15, title:"Diplomatic Expulsions Announced",    location:"Moscow, Russia",             lat:55.75, lng:37.62, level:"medium",   category:"diplomatic", time:"11h ago",  description:"Russia expels 18 EU diplomats. Brussels confirms reciprocal measures." },
+  { id:16, title:"Emergency Sanctions Package",        location:"Tehran, Iran",               lat:35.69, lng:51.39, level:"medium",   category:"economic",   time:"12h ago",  description:"G7 announces new sanctions targeting Iran's petroleum exports and central bank." },
+  { id:17, title:"Border Incursion Reported",          location:"Nagorno-Karabakh",           lat:39.95, lng:46.75, level:"medium",   category:"conflict",   time:"13h ago",  description:"Azerbaijan forces cross buffer zone; OSCE monitoring mission put on alert." },
+  { id:18, title:"Data Breach — Defense Contractor",  location:"Seoul, South Korea",         lat:37.57, lng:126.98,level:"medium",   category:"cyber",      time:"14h ago",  description:"Classified procurement data of ROK Defense Ministry contractor leaked online." },
+  { id:19, title:"Wildfire Emergency Declared",        location:"California, USA",            lat:34.05, lng:-118.24,level:"medium",  category:"disaster",   time:"6h ago",   description:"Fast-moving fire consumes 12,000 acres. Interstate 5 closed; air quality critical." },
+  { id:20, title:"Trade War Tariff Escalation",        location:"Washington D.C., USA",       lat:38.91, lng:-77.04,level:"low",      category:"economic",   time:"15h ago",  description:"White House announces 25% tariffs on all Chinese semiconductor imports effective next month." },
+];
+
+function getThreatColor(level) {
+  return { critical:"#ef4444", high:"#f97316", medium:"#eab308", low:"#22c55e" }[level] ?? "#6366f1";
+}
+
+function getThreatRadius(level) {
+  return { critical:11, high:9, medium:7, low:5 }[level] ?? 6;
+}
+
+function loadIntelView() {
+  updateThreatStats(THREAT_EVENTS);
+  initThreatMap();
+  renderThreatEvents(THREAT_EVENTS);
+  initThreatFilters();
+}
+
+function initThreatMap() {
+  if (threatLeafletMap) return;
+
+  threatLeafletMap = L.map("threat-map", {
+    center: [20, 15],
+    zoom: 2,
+    zoomControl: true,
+    attributionControl: true,
+  });
+
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+    attribution: '&copy; <a href="https://openstreetmap.org">OSM</a> &copy; <a href="https://carto.com">CartoDB</a>',
+    subdomains: "abcd",
+    maxZoom: 18,
+  }).addTo(threatLeafletMap);
+
+  THREAT_EVENTS.forEach((ev) => addThreatMarker(ev));
+
+  setTimeout(() => threatLeafletMap.invalidateSize(), 200);
+}
+
+function addThreatMarker(ev) {
+  const color  = getThreatColor(ev.level);
+  const radius = getThreatRadius(ev.level);
+
+  const marker = L.circleMarker([ev.lat, ev.lng], {
+    radius,
+    fillColor: color,
+    color:     color,
+    weight:    2,
+    opacity:   0.9,
+    fillOpacity: 0.55,
+  }).addTo(threatLeafletMap);
+
+  marker.bindPopup(`
+    <div style="min-width:200px;max-width:260px">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:${color};margin-bottom:5px">${ev.level}</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px;line-height:1.4">${ev.title}</div>
+      <div style="font-size:11px;color:#8888a8;margin-bottom:6px">📍 ${ev.location} · ${ev.time}</div>
+      <div style="font-size:11px;color:#a8a8c8;line-height:1.5">${ev.description}</div>
+    </div>
+  `);
+
+  if (ev.level === "critical" || ev.level === "high") {
+    const pulse = L.circleMarker([ev.lat, ev.lng], {
+      radius: radius + 5,
+      fillColor: "transparent",
+      color: color,
+      weight: 1,
+      opacity: 0.3,
+      fillOpacity: 0,
+      className: "threat-pulse-ring",
+    }).addTo(threatLeafletMap);
+    threatMarkerList.push({ marker: pulse, ev });
+  }
+
+  threatMarkerList.push({ marker, ev });
+}
+
+function renderThreatEvents(events) {
+  const container = document.getElementById("threat-events-list");
+  if (!container) return;
+
+  if (events.length === 0) {
+    container.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted)">No events match the current filters</div>`;
+    return;
+  }
+
+  container.innerHTML = events.map((ev) => {
+    const color = getThreatColor(ev.level);
+    return `
+      <div class="threat-event-card" data-id="${ev.id}">
+        <div class="threat-card-top">
+          <span class="threat-level-badge ${ev.level}">${ev.level}</span>
+          <span class="threat-card-title">${ev.title}</span>
+        </div>
+        <div class="threat-card-desc">${ev.description}</div>
+        <div class="threat-card-meta">
+          <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          ${ev.location}
+          <span style="color:var(--border-light)">·</span>
+          ${ev.time}
+          <span class="threat-cat-tag">${ev.category}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  container.querySelectorAll(".threat-event-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      const ev = THREAT_EVENTS.find((e) => e.id === Number(card.dataset.id));
+      if (!ev || !threatLeafletMap) return;
+      threatLeafletMap.flyTo([ev.lat, ev.lng], 5, { duration: 1 });
+      const found = threatMarkerList.find((m) => m.ev.id === ev.id && m.marker.getRadius() === getThreatRadius(ev.level));
+      found?.marker.openPopup();
+      container.querySelectorAll(".threat-event-card").forEach((c) => c.classList.remove("active-card"));
+      card.classList.add("active-card");
+    });
+  });
+}
+
+function updateThreatStats(events) {
+  const count = (level) => events.filter((e) => e.level === level).length;
+  const el = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  el("threat-stat-critical", `${count("critical")} Critical`);
+  el("threat-stat-high",     `${count("high")} High`);
+  el("threat-stat-medium",   `${count("medium")} Medium`);
+}
+
+function getFilteredThreatEvents() {
+  return THREAT_EVENTS.filter((ev) => {
+    const levelOk = activeThreatLevel === "all" || ev.level === activeThreatLevel;
+    const catOk   = activeThreatCat   === "all" || ev.category === activeThreatCat;
+    return levelOk && catOk;
+  });
+}
+
+function applyThreatFilters() {
+  const filtered = getFilteredThreatEvents();
+  renderThreatEvents(filtered);
+  updateThreatStats(filtered);
+
+  if (!threatLeafletMap) return;
+  threatMarkerList.forEach(({ marker, ev }) => {
+    const levelOk = activeThreatLevel === "all" || ev.level === activeThreatLevel;
+    const catOk   = activeThreatCat   === "all" || ev.category === activeThreatCat;
+    const show = levelOk && catOk;
+    if (show) { if (!threatLeafletMap.hasLayer(marker)) marker.addTo(threatLeafletMap); }
+    else       { if (threatLeafletMap.hasLayer(marker))  marker.remove(); }
+  });
+}
+
+function initThreatFilters() {
+  const sidebar = document.querySelector("#view-intel .sports-sidebar-inner");
+  if (!sidebar) return;
+
+  sidebar.querySelectorAll("[data-level]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      sidebar.querySelectorAll("[data-level]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeThreatLevel = btn.dataset.level ?? "all";
+      applyThreatFilters();
+    });
+  });
+
+  sidebar.querySelectorAll("[data-cat]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      sidebar.querySelectorAll("[data-cat]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeThreatCat = btn.dataset.cat ?? "all";
+      applyThreatFilters();
+    });
+  });
 }

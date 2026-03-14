@@ -47,9 +47,106 @@
     @media (max-width: 560px) {
       #markets-list { grid-template-columns: 1fr !important; }
     }
+
+    /* ── Intel / Threat Map 視圖 ── */
+    .threat-map-container {
+      height: 400px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border, #2a2a38);
+      margin-bottom: 16px;
+    }
+    .threat-filter-section { margin-bottom: 4px; }
+    .threat-filter-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted, #5a5a78);
+      padding: 4px 10px 6px;
+      display: block;
+    }
+    .threat-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%; flex-shrink: 0;
+    }
+    .threat-dot.critical { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.6); }
+    .threat-dot.high     { background: #f97316; box-shadow: 0 0 6px rgba(249,115,22,0.6); }
+    .threat-dot.medium   { background: #eab308; box-shadow: 0 0 6px rgba(234,179,8,0.6); }
+    .threat-dot.low      { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.6); }
+    .threat-stats-row {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .threat-stat {
+      font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 4px;
+    }
+    .threat-stat.critical { background: rgba(239,68,68,0.15); color: #f87171; }
+    .threat-stat.high     { background: rgba(249,115,22,0.15); color: #fb923c; }
+    .threat-stat.medium   { background: rgba(234,179,8,0.15);  color: #fbbf24; }
+    .threat-events-list { display: flex; flex-direction: column; gap: 8px; }
+    .threat-event-card {
+      background: var(--bg-card, #1a1a24);
+      border: 1px solid var(--border, #2a2a38);
+      border-radius: 10px; padding: 12px 14px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .threat-event-card:hover {
+      border-color: var(--border-light, #32324a);
+      background: var(--bg-card-hover, #1e1e2a);
+    }
+    .threat-event-card.active-card {
+      border-color: rgba(99,102,241,0.5);
+    }
+    .threat-card-top {
+      display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px;
+    }
+    .threat-level-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 7px; border-radius: 4px;
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .threat-level-badge.critical { background: rgba(239,68,68,0.15); color: #f87171; }
+    .threat-level-badge.high     { background: rgba(249,115,22,0.15); color: #fb923c; }
+    .threat-level-badge.medium   { background: rgba(234,179,8,0.15);  color: #fbbf24; }
+    .threat-level-badge.low      { background: rgba(34,197,94,0.15);  color: #4ade80; }
+    .threat-card-title {
+      font-size: 13px; font-weight: 600;
+      color: var(--text-primary, #e8e8f0); flex: 1; line-height: 1.4;
+    }
+    .threat-card-desc {
+      font-size: 12px; color: var(--text-secondary, #8888a8);
+      line-height: 1.5; margin-bottom: 6px;
+    }
+    .threat-card-meta {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px; color: var(--text-muted, #5a5a78);
+    }
+    .threat-cat-tag {
+      padding: 1px 6px; border-radius: 4px;
+      background: rgba(255,255,255,0.06);
+      font-size: 10px; text-transform: capitalize; color: var(--text-secondary);
+    }
+    /* Leaflet dark popup override */
+    .leaflet-container { background: #0f0f13 !important; font-family: Inter, sans-serif !important; }
+    .leaflet-popup-content-wrapper {
+      background: #1a1a24 !important; color: #e8e8f0 !important;
+      border: 1px solid #2a2a38 !important; border-radius: 10px !important;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+    }
+    .leaflet-popup-tip { background: #1a1a24 !important; }
+    .leaflet-popup-close-button { color: #8888a8 !important; }
+    .leaflet-control-zoom a {
+      background: #1a1a24 !important; color: #e8e8f0 !important;
+      border-color: #2a2a38 !important;
+    }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 </head>
 <body>
   <!-- 頂部導覽列 -->
@@ -76,6 +173,14 @@
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
           </svg>
           Sports
+        </a>
+        <a href="#" class="nav-item" id="nav-intel">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-1px">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+          Intel
         </a>
         <a href="#" class="nav-item" id="nav-watchlist">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-1px">
@@ -363,6 +468,100 @@
           </div>
         </div>
 
+        <!-- ══ INTEL / THREAT MAP 視圖 ══ -->
+        <div id="view-intel" style="display:none">
+
+          <!-- 標題列 -->
+          <div class="sports-header-row">
+            <div class="sports-title-wrap">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:#6366f1">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+              <h2 class="sports-title">Global Threat Intelligence</h2>
+              <span class="platform-live-dot"></span>
+            </div>
+            <div class="threat-stats-row">
+              <span class="threat-stat critical" id="threat-stat-critical">0 Critical</span>
+              <span class="threat-stat high" id="threat-stat-high">0 High</span>
+              <span class="threat-stat medium" id="threat-stat-medium">0 Medium</span>
+            </div>
+          </div>
+
+          <!-- Body: sidebar + main -->
+          <div class="sports-body">
+
+            <!-- Left sidebar: 篩選 -->
+            <div class="sports-sidebar">
+              <div class="sports-sidebar-inner">
+
+                <div class="threat-filter-section">
+                  <span class="threat-filter-label">Threat Level</span>
+                  <button class="sports-cat-parent active" data-level="all" data-leaf="true">
+                    <span class="scp-label">All Events</span>
+                  </button>
+                  <button class="sports-cat-parent" data-level="critical" data-leaf="true">
+                    <span class="threat-dot critical"></span>
+                    <span class="scp-label">Critical</span>
+                  </button>
+                  <button class="sports-cat-parent" data-level="high" data-leaf="true">
+                    <span class="threat-dot high"></span>
+                    <span class="scp-label">High</span>
+                  </button>
+                  <button class="sports-cat-parent" data-level="medium" data-leaf="true">
+                    <span class="threat-dot medium"></span>
+                    <span class="scp-label">Medium</span>
+                  </button>
+                  <button class="sports-cat-parent" data-level="low" data-leaf="true">
+                    <span class="threat-dot low"></span>
+                    <span class="scp-label">Low</span>
+                  </button>
+                </div>
+
+                <div class="threat-filter-section" style="margin-top:20px">
+                  <span class="threat-filter-label">Category</span>
+                  <button class="sports-cat-parent active" data-cat="all" data-leaf="true">
+                    <span class="scp-label">All Types</span>
+                  </button>
+                  <button class="sports-cat-parent" data-cat="conflict" data-leaf="true">
+                    <span class="scp-icon">⚔️</span><span class="scp-label">Conflict</span>
+                  </button>
+                  <button class="sports-cat-parent" data-cat="military" data-leaf="true">
+                    <span class="scp-icon">🎖️</span><span class="scp-label">Military</span>
+                  </button>
+                  <button class="sports-cat-parent" data-cat="terrorism" data-leaf="true">
+                    <span class="scp-icon">💥</span><span class="scp-label">Terrorism</span>
+                  </button>
+                  <button class="sports-cat-parent" data-cat="protest" data-leaf="true">
+                    <span class="scp-icon">✊</span><span class="scp-label">Protest</span>
+                  </button>
+                  <button class="sports-cat-parent" data-cat="cyber" data-leaf="true">
+                    <span class="scp-icon">🔐</span><span class="scp-label">Cyber</span>
+                  </button>
+                  <button class="sports-cat-parent" data-cat="disaster" data-leaf="true">
+                    <span class="scp-icon">🌊</span><span class="scp-label">Disaster</span>
+                  </button>
+                  <button class="sports-cat-parent" data-cat="diplomatic" data-leaf="true">
+                    <span class="scp-icon">🤝</span><span class="scp-label">Diplomatic</span>
+                  </button>
+                  <button class="sports-cat-parent" data-cat="economic" data-leaf="true">
+                    <span class="scp-icon">📉</span><span class="scp-label">Economic</span>
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Right main: map + event feed -->
+            <div class="sports-main">
+              <div id="threat-map" class="threat-map-container"></div>
+              <div id="threat-events-list" class="threat-events-list"></div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
 
       <!-- 右側側邊欄 -->
@@ -401,6 +600,7 @@
     </div>
   </main>
 
-  <script src="app.js?v=29"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="app.js?v=30"></script>
 </body>
 </html>
