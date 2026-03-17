@@ -6,6 +6,7 @@
 }
 
 :root {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
   --bg-primary: #0f0f13;
   --bg-secondary: #16161d;
   --bg-card: #1a1a24;
