@@ -3222,7 +3222,7 @@ function getThreatPointRadius(level) {
 
 function buildThreatLabel(ev) {
   const color = getThreatColor(ev.level);
-  return `<div style="background:#1a1a24;border:1px solid #2a2a38;border-radius:10px;padding:12px 14px;max-width:240px;font-family:Inter,sans-serif;pointer-events:none">
+  return `<div style="background:#1a1a24;border:1px solid #2a2a38;border-radius:10px;padding:12px 14px;max-width:240px;font-family:Geist,sans-serif;pointer-events:none">
     <div style="font-size:10px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">${ev.level}</div>
     <div style="font-size:13px;font-weight:600;color:#e8e8f0;margin-bottom:4px;line-height:1.4">${ev.title}</div>
     <div style="font-size:11px;color:#8888a8;margin-bottom:6px">📍 ${ev.location} · ${ev.time}</div>
