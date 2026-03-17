@@ -2524,6 +2524,36 @@ function genMockPriceHistory(days = 90, startPrice = 0.50, endPrice = 0.72) {
   return pts;
 }
 
+/** 產生多結果市場的機率歷史（每條線一個結果，總和約 100%） */
+function genMultiOutcomePriceHistory(days = 90, outcomeConfigs) {
+  // outcomeConfigs: [{ key, startPct, endPct, color }]
+  const pts = [];
+  const keys = outcomeConfigs.map(c => c.key);
+  for (let i = 0; i < days; i++) {
+    const t = new Date(Date.now() - (days - i) * 86400000);
+    const frac = i / (days - 1 || 1);
+    const vals = {};
+    let sum = 0;
+    outcomeConfigs.forEach((c, idx) => {
+      const p = c.startPct + (c.endPct - c.startPct) * frac;
+      const noise = (Math.random() - 0.5) * 0.02;
+      vals[c.key] = Math.max(0.001, Math.min(0.99, p / 100 + noise));
+      sum += vals[c.key];
+    });
+    // 正規化使總和 = 1
+    keys.forEach(k => { vals[k] = vals[k] / sum; });
+    pts.push({ t, ...vals });
+  }
+  return pts;
+}
+
+const MOCK_MARKET_CHART_OUTCOMES = [
+  { key: "noChange", label: "No change", startPct: 68, endPct: 99, color: "#f97316" },
+  { key: "bps25Dec", label: "25 bps decrease", startPct: 24, endPct: 0.5, color: "#3b82f6" },
+  { key: "bps50Dec", label: "50+ bps decrease", startPct: 5, endPct: 0.2, color: "#22c55e" },
+  { key: "bps25Inc", label: "25+ bps increase", startPct: 3, endPct: 0.5, color: "#eab308" },
+];
+
 const MOCK_MARKET = {
   id: "fed-rate-cut-march-2026",
   title: "Will the Fed cut interest rates at the March 2026 FOMC meeting?",
@@ -2541,6 +2571,8 @@ const MOCK_MARKET = {
     { label: "No",  price: 0.28, color: "#ef4444" },
   ],
   priceHistory: genMockPriceHistory(90, 0.45, 0.72),
+  chartOutcomes: MOCK_MARKET_CHART_OUTCOMES,
+  multiOutcomePriceHistory: genMultiOutcomePriceHistory(90, MOCK_MARKET_CHART_OUTCOMES),
   orderBook: {
     asks: [
       { price: 0.750, size: 14200 },
@@ -2573,70 +2605,130 @@ let mktSelectedOutcome = "yes";
 let mktChartRange      = "1M";
 let mktOrderType       = "market"; // "market" | "limit"
 
-/** 以 SVG 繪製市場價格走勢圖 */
+/** 以 SVG 繪製市場價格走勢圖（支援單線或多線） */
 function renderMktChart(market) {
   const wrap = document.getElementById("mkt-chart-wrap");
   if (!wrap) return;
 
   const RANGES = { "1D": 1, "1W": 7, "1M": 30, "All": 999 };
   const days   = RANGES[mktChartRange] ?? 30;
-  const data   = market.priceHistory.slice(-days);
+
+  const isMulti = market.multiOutcomePriceHistory?.length && market.chartOutcomes?.length;
+  const data    = isMulti
+    ? market.multiOutcomePriceHistory.slice(-days)
+    : (market.priceHistory || []).slice(-days);
   if (!data.length) return;
 
-  const W = 600, H = 180;
-  const P = { t: 14, r: 8, b: 28, l: 40 };
+  const W = 600, H = 200;
+  const P = { t: 14, r: 8, b: 36, l: 45 };
   const CW = W - P.l - P.r, CH = H - P.t - P.b;
 
-  const yVals = data.map(d => d.yes);
-  const minY  = Math.min(...yVals) - 0.02;
-  const maxY  = Math.max(...yVals) + 0.02;
-  const yR    = maxY - minY || 0.01;
+  const xS = (i) => P.l + (i / Math.max(1, data.length - 1)) * CW;
 
-  const xS = (i) => P.l + (i / (data.length - 1)) * CW;
-  const yS = (v) => P.t + (1 - (v - minY) / yR) * CH;
+  if (isMulti) {
+    // 多結果曲線圖
+    const outcomes = market.chartOutcomes;
+    const allVals  = data.flatMap(d => outcomes.map(o => d[o.key] ?? 0));
+    const minY     = 0;
+    const maxY     = 1;
+    const yS      = (v) => P.t + (1 - (v - minY) / (maxY - minY)) * CH;
 
-  const isUp  = yVals.at(-1) >= yVals[0];
-  const color = isUp ? "#22c55e" : "#ef4444";
-  const fade  = isUp ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)";
+    // Y ticks (0%, 25%, 50%, 75%, 100%)
+    const yTicks = [0,1,2,3,4].map(i => {
+      const v = i * 0.25;
+      return `<text x="${P.l-8}" y="${(yS(v)+4).toFixed(1)}" text-anchor="end" fill="#5a5a78" font-size="10">${i*25}%</text>
+              <line x1="${P.l}" y1="${yS(v).toFixed(1)}" x2="${W-P.r}" y2="${yS(v).toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
+    }).join("");
 
-  const linePts = data.map((d, i) => `${xS(i).toFixed(1)},${yS(d.yes).toFixed(1)}`).join(" ");
-  const areaClose = ` ${xS(data.length-1).toFixed(1)},${H-P.b} ${P.l},${H-P.b}`;
+    const xIdxs = [0, Math.floor(data.length/3), Math.floor(data.length*2/3), data.length-1];
+    const xTicks = xIdxs.map(i => {
+      const d = data[i];
+      const label = d.t instanceof Date ? d.t.toLocaleDateString("en-US", { month:"short", day:"numeric" }) : "";
+      return `<text x="${xS(i).toFixed(1)}" y="${H-P.b+14}" text-anchor="middle" fill="#5a5a78" font-size="10">${label}</text>`;
+    }).join("");
 
-  // Y ticks
-  const yTicks = [0,1,2,3].map(i => {
-    const v = minY + (yR * i / 3);
-    return `<text x="${P.l-6}" y="${(yS(v)+4).toFixed(1)}" text-anchor="end" fill="#5a5a78" font-size="10">${Math.round(v*100)}¢</text>
-            <line x1="${P.l}" y1="${yS(v).toFixed(1)}" x2="${W-P.r}" y2="${yS(v).toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
-  }).join("");
+    const lines = outcomes.map((o, oi) => {
+      const pts = data.map((d, i) => `${xS(i).toFixed(1)},${yS(d[o.key] ?? 0).toFixed(1)}`).join(" ");
+      const lastVal = data.at(-1)?.[o.key] ?? 0;
+      const lastX   = xS(data.length - 1).toFixed(1);
+      const lastY   = yS(lastVal).toFixed(1);
+      const lastPct = Math.round(lastVal * 100);
+      return { pts, color: o.color, lastX, lastY, lastPct, label: o.label };
+    });
 
-  // X ticks (4 evenly spaced)
-  const xIdxs = [0, Math.floor(data.length/3), Math.floor(data.length*2/3), data.length-1];
-  const xTicks = xIdxs.map(i => {
-    const d = data[i];
-    const label = d.t instanceof Date
-      ? d.t.toLocaleDateString("en-US", { month:"short", day:"numeric" })
-      : "";
-    return `<text x="${xS(i).toFixed(1)}" y="${H-P.b+14}" text-anchor="middle" fill="#5a5a78" font-size="10">${label}</text>`;
-  }).join("");
+    const defs = outcomes.map((o, i) =>
+      `<linearGradient id="mktGrad${i}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${o.color}" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="${o.color}" stop-opacity="0"/>
+      </linearGradient>`
+    ).join("");
 
-  // Current price marker
-  const lastX = xS(data.length-1).toFixed(1);
-  const lastY = yS(yVals.at(-1)).toFixed(1);
-  const lastPct = Math.round(yVals.at(-1) * 100);
+    const polylines = lines.map((l, i) => {
+      const ptsArr = l.pts.split(" ");
+      const lastPt = ptsArr[ptsArr.length - 1];
+      const firstPt = ptsArr[0];
+      const areaPts = `${l.pts} ${lastPt},${H-P.b} ${firstPt},${H-P.b}`;
+      return `<polyline fill="url(#mktGrad${i})" stroke="none" points="${areaPts}"/>
+              <polyline fill="none" stroke="${l.color}" stroke-width="2" stroke-linejoin="round" points="${l.pts}"/>
+              <circle cx="${l.lastX}" cy="${l.lastY}" r="3.5" fill="${l.color}" stroke="#16161e" stroke-width="1.5"/>
+              <text x="${parseFloat(l.lastX)+6}" y="${parseFloat(l.lastY)+4}" fill="${l.color}" font-size="10" font-weight="700">${l.lastPct}%</text>`;
+    }).join("");
 
-  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="mktGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
-        <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
-      </linearGradient>
-    </defs>
-    ${yTicks}${xTicks}
-    <polyline fill="url(#mktGrad)" stroke="none" points="${linePts} ${areaClose}"/>
-    <polyline fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" points="${linePts}"/>
-    <circle cx="${lastX}" cy="${lastY}" r="4" fill="${color}" stroke="#16161e" stroke-width="2"/>
-    <text x="${parseFloat(lastX)+8}" y="${parseFloat(lastY)+4}" fill="${color}" font-size="11" font-weight="700">${lastPct}¢</text>
-  </svg>`;
+    const legendHtml = outcomes.map((o, i) =>
+      `<span class="mkt-chart-legend-item"><span class="mkt-chart-dot" style="background:${o.color}"></span>${o.label}</span>`
+    ).join("");
+
+    wrap.innerHTML = `
+      <div class="mkt-chart-legend" id="mkt-chart-legend">${legendHtml}</div>
+      <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+        <defs>${defs}</defs>
+        ${yTicks}${xTicks}
+        ${polylines}
+      </svg>`;
+  } else {
+    // 單線（Yes/No 二元）
+    const yVals = data.map(d => d.yes);
+    const minY  = Math.min(...yVals) - 0.02;
+    const maxY  = Math.max(...yVals) + 0.02;
+    const yR    = maxY - minY || 0.01;
+    const yS    = (v) => P.t + (1 - (v - minY) / yR) * CH;
+
+    const isUp  = yVals.at(-1) >= yVals[0];
+    const color = isUp ? "#22c55e" : "#ef4444";
+    const linePts = data.map((d, i) => `${xS(i).toFixed(1)},${yS(d.yes).toFixed(1)}`).join(" ");
+    const areaClose = ` ${xS(data.length-1).toFixed(1)},${H-P.b} ${P.l},${H-P.b}`;
+
+    const yTicks = [0,1,2,3].map(i => {
+      const v = minY + (yR * i / 3);
+      return `<text x="${P.l-6}" y="${(yS(v)+4).toFixed(1)}" text-anchor="end" fill="#5a5a78" font-size="10">${Math.round(v*100)}¢</text>
+              <line x1="${P.l}" y1="${yS(v).toFixed(1)}" x2="${W-P.r}" y2="${yS(v).toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
+    }).join("");
+
+    const xIdxs = [0, Math.floor(data.length/3), Math.floor(data.length*2/3), data.length-1];
+    const xTicks = xIdxs.map(i => {
+      const d = data[i];
+      const label = d.t instanceof Date ? d.t.toLocaleDateString("en-US", { month:"short", day:"numeric" }) : "";
+      return `<text x="${xS(i).toFixed(1)}" y="${H-P.b+14}" text-anchor="middle" fill="#5a5a78" font-size="10">${label}</text>`;
+    }).join("");
+
+    const lastX = xS(data.length-1).toFixed(1);
+    const lastY = yS(yVals.at(-1)).toFixed(1);
+    const lastPct = Math.round(yVals.at(-1) * 100);
+
+    wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="mktGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      ${yTicks}${xTicks}
+      <polyline fill="url(#mktGrad)" stroke="none" points="${linePts} ${areaClose}"/>
+      <polyline fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" points="${linePts}"/>
+      <circle cx="${lastX}" cy="${lastY}" r="4" fill="${color}" stroke="#16161e" stroke-width="2"/>
+      <text x="${parseFloat(lastX)+8}" y="${parseFloat(lastY)+4}" fill="${color}" font-size="11" font-weight="700">${lastPct}¢</text>
+    </svg>`;
+  }
 }
 
 /** 渲染市場詳情頁 */
