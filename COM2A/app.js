@@ -29,6 +29,200 @@ function cacheSet(key, data) {
   } catch (_) {}
 }
 
+// ===== i18n 中英雙語 =====
+const I18N = {
+  en: {
+    "nav.events": "Events",
+    "nav.crypto": "Crypto",
+    "nav.sports": "Sports",
+    "nav.intel": "Intel",
+    "nav.watchlist": "Watchlist",
+    "nav.portfolio": "Portfolio",
+    "nav.logIn": "Log In",
+    "search.placeholder": "Search markets...",
+    "filter.volume24hr": "24h Volume",
+    "filter.liquidity": "Liquidity",
+    "filter.newest": "Newest",
+    "filter.endingSoon": "Ending Soon",
+    "filter.watchlist": "Watchlist",
+    "filter.allEvents": "All Events",
+    "sidebar.recentTrades": "Recent Trades",
+    "sidebar.topTraders": "Top Traders",
+    "sidebar.news": "News",
+    "card.buyYes": "Buy YES",
+    "card.buyNo": "Buy NO",
+    "card.volume": "24h Volume",
+    "card.liquidity": "Liquidity",
+    "card.ends": "Ends",
+    "login.welcomeBack": "Welcome back",
+    "login.subtitle": "Log in to your account",
+    "login.email": "Email",
+    "login.password": "Password",
+    "login.forgotPassword": "Forgot password?",
+    "login.noAccount": "Don't have an account?",
+    "login.signUp": "Sign up",
+    "login.logIn": "Log In",
+    "common.global": "Global",
+    "common.noTrades": "No recent trades.",
+    "filter.sort": "Sort",
+  },
+  zh: {
+    "nav.events": "事件",
+    "nav.crypto": "加密貨幣",
+    "nav.sports": "體育",
+    "nav.intel": "情報",
+    "nav.watchlist": "關注清單",
+    "nav.portfolio": "投資組合",
+    "nav.logIn": "登入",
+    "search.placeholder": "搜尋市場...",
+    "filter.volume24hr": "24h 成交量",
+    "filter.liquidity": "流動性",
+    "filter.newest": "最新",
+    "filter.endingSoon": "即將結束",
+    "filter.watchlist": "關注清單",
+    "filter.allEvents": "全部事件",
+    "sidebar.recentTrades": "最近交易",
+    "sidebar.topTraders": "熱門交易者",
+    "sidebar.news": "新聞",
+    "card.buyYes": "買入 YES",
+    "card.buyNo": "買入 NO",
+    "card.volume": "24h 成交量",
+    "card.liquidity": "流動性",
+    "card.ends": "結束",
+    "login.welcomeBack": "歡迎回來",
+    "login.subtitle": "登入您的帳戶",
+    "login.email": "電子郵件",
+    "login.password": "密碼",
+    "login.forgotPassword": "忘記密碼？",
+    "login.noAccount": "還沒有帳戶？",
+    "login.signUp": "註冊",
+    "login.logIn": "登入",
+    "common.global": "全球",
+    "common.noTrades": "尚無最近交易。",
+    "filter.sort": "排序",
+  },
+  ja: {
+    "nav.events": "イベント",
+    "nav.crypto": "暗号資産",
+    "nav.sports": "スポーツ",
+    "nav.intel": "インテル",
+    "nav.watchlist": "ウォッチリスト",
+    "nav.portfolio": "ポートフォリオ",
+    "nav.logIn": "ログイン",
+    "search.placeholder": "マーケットを検索...",
+    "filter.volume24hr": "24h 出来高",
+    "filter.liquidity": "流動性",
+    "filter.newest": "新着",
+    "filter.endingSoon": "まもなく終了",
+    "filter.watchlist": "ウォッチリスト",
+    "filter.allEvents": "すべてのイベント",
+    "sidebar.recentTrades": "最近の取引",
+    "sidebar.topTraders": "トップトレーダー",
+    "sidebar.news": "ニュース",
+    "card.buyYes": "YES を買う",
+    "card.buyNo": "NO を買う",
+    "card.volume": "24h 出来高",
+    "card.liquidity": "流動性",
+    "card.ends": "終了",
+    "login.welcomeBack": "おかえりなさい",
+    "login.subtitle": "アカウントにログイン",
+    "login.email": "メール",
+    "login.password": "パスワード",
+    "login.forgotPassword": "パスワードをお忘れですか？",
+    "login.noAccount": "アカウントをお持ちでないですか？",
+    "login.signUp": "新規登録",
+    "login.logIn": "ログイン",
+    "common.global": "グローバル",
+    "common.noTrades": "最近の取引はありません。",
+    "filter.sort": "並び替え",
+  },
+  ko: {
+    "nav.events": "이벤트",
+    "nav.crypto": "암호화폐",
+    "nav.sports": "스포츠",
+    "nav.intel": "인텔",
+    "nav.watchlist": "관심 목록",
+    "nav.portfolio": "포트폴리오",
+    "nav.logIn": "로그인",
+    "search.placeholder": "마켓 검색...",
+    "filter.volume24hr": "24h 거래량",
+    "filter.liquidity": "유동성",
+    "filter.newest": "최신",
+    "filter.endingSoon": "곧 종료",
+    "filter.watchlist": "관심 목록",
+    "filter.allEvents": "전체 이벤트",
+    "sidebar.recentTrades": "최근 거래",
+    "sidebar.topTraders": "인기 트레이더",
+    "sidebar.news": "뉴스",
+    "card.buyYes": "YES 구매",
+    "card.buyNo": "NO 구매",
+    "card.volume": "24h 거래량",
+    "card.liquidity": "유동성",
+    "card.ends": "종료",
+    "login.welcomeBack": "다시 오신 것을 환영합니다",
+    "login.subtitle": "계정에 로그인",
+    "login.email": "이메일",
+    "login.password": "비밀번호",
+    "login.forgotPassword": "비밀번호를 잊으셨나요?",
+    "login.noAccount": "계정이 없으신가요?",
+    "login.signUp": "가입",
+    "login.logIn": "로그인",
+    "common.global": "글로벌",
+    "common.noTrades": "최근 거래가 없습니다.",
+    "filter.sort": "정렬",
+  },
+};
+
+const SUPPORTED_LANGS = ["en", "zh", "ja", "ko"];
+
+function getLang() {
+  try {
+    const lang = localStorage.getItem("com2a_lang") || "en";
+    return SUPPORTED_LANGS.includes(lang) ? lang : "en";
+  } catch (_) { return "en"; }
+}
+
+function setLang(lang) {
+  try {
+    localStorage.setItem("com2a_lang", lang);
+    applyLang(lang);
+    refreshOnLangChange();
+  } catch (_) {}
+}
+
+function refreshOnLangChange() {
+  const viewEvents = document.getElementById("view-events");
+  const viewSports = document.getElementById("view-sports");
+  const viewCrypto = document.getElementById("view-crypto");
+  if (viewEvents?.style.display !== "none") applyCurrentFilters();
+  if (viewSports?.style.display !== "none") renderSportsMarkets?.();
+  if (viewCrypto?.style.display !== "none") renderCryptoMarkets?.();
+  renderNews(NEWS_DATA);
+  renderTopTraders();
+}
+
+function t(key) {
+  const lang = getLang();
+  return (I18N[lang] && I18N[lang][key]) || (I18N.en[key]) || key;
+}
+
+function applyLang(lang) {
+  const L = I18N[lang] || I18N.en;
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.getAttribute("data-i18n");
+    if (L[key]) el.textContent = L[key];
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-placeholder");
+    if (L[key]) el.placeholder = L[key];
+  });
+  const langAttr = { en: "en", zh: "zh-TW", ja: "ja", ko: "ko" }[lang] || "en";
+  document.documentElement.lang = langAttr;
+  document.querySelectorAll(".lang-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.getAttribute("data-lang") === lang);
+  });
+}
+
 // ===== 並行多 Proxy，用最快回應的 =====
 const PROXY_LIST = [
   (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
@@ -307,7 +501,7 @@ function renderEventCard(card, ev) {
         </div>
         <div class="market-meta">
           <span class="platform-tag">Polymarket</span>
-          <span class="market-end-date">Ends ${endDate}</span>
+          <span class="market-end-date">${t("card.ends")} ${endDate}</span>
           <span class="outcomes-count-badge">${markets.length} outcomes</span>
         </div>
       </div>
@@ -318,8 +512,8 @@ function renderEventCard(card, ev) {
       ${extra > 0 ? `<div class="event-preview-more">+${extra} more outcomes</div>` : ""}
     </div>
     <div class="market-stats">
-      <div class="stat-item"><div class="stat-label">24h Volume</div><div class="stat-value">${vol24h}</div></div>
-      <div class="stat-item"><div class="stat-label">Liquidity</div><div class="stat-value">${oi}</div></div>
+      <div class="stat-item"><div class="stat-label">${t("card.volume")}</div><div class="stat-value">${vol24h}</div></div>
+      <div class="stat-item"><div class="stat-label">${t("card.liquidity")}</div><div class="stat-value">${oi}</div></div>
     </div>`;
 
   card.querySelector(".card-star-btn").addEventListener("click", (e) => {
@@ -365,7 +559,7 @@ function renderBinaryCard(card, m, parentEvent) {
         </div>
         <div class="market-meta">
           <span class="platform-tag">Polymarket</span>
-          <span class="market-end-date">Ends ${endDate}</span>
+          <span class="market-end-date">${t("card.ends")} ${endDate}</span>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
@@ -381,15 +575,15 @@ function renderBinaryCard(card, m, parentEvent) {
       <div class="bar-no"  style="width:${noPct}%"></div>
     </div>
     <div class="market-stats">
-      <div class="stat-item"><div class="stat-label">24h Volume</div><div class="stat-value">${vol24h}</div></div>
-      <div class="stat-item"><div class="stat-label">Liquidity</div><div class="stat-value">${oi}</div></div>
+      <div class="stat-item"><div class="stat-label">${t("card.volume")}</div><div class="stat-value">${vol24h}</div></div>
+      <div class="stat-item"><div class="stat-label">${t("card.liquidity")}</div><div class="stat-value">${oi}</div></div>
     </div>
     <div class="market-actions">
       <button class="btn-trade yes-btn" onclick="event.stopPropagation(); openBuyModal(event, ${JSON.stringify(m.question).replace(/"/g,"&quot;")}, 'Yes', ${yesPct})">
-        Buy YES &nbsp;<strong>${yesPct}¢</strong>
+        ${t("card.buyYes")} &nbsp;<strong>${yesPct}¢</strong>
       </button>
       <button class="btn-trade no-btn" onclick="event.stopPropagation(); openBuyModal(event, ${JSON.stringify(m.question).replace(/"/g,"&quot;")}, 'No', ${noPct})">
-        Buy NO &nbsp;<strong>${noPct}¢</strong>
+        ${t("card.buyNo")} &nbsp;<strong>${noPct}¢</strong>
       </button>
     </div>`;
 
@@ -412,7 +606,7 @@ function renderTrades(trades) {
   container.innerHTML = "";
 
   if (!trades || trades.length === 0) {
-    container.innerHTML = `<div style="padding:16px 18px;color:var(--text-muted);font-size:13px">No recent trades.</div>`;
+    container.innerHTML = `<div style="padding:16px 18px;color:var(--text-muted);font-size:13px">${t("common.noTrades")}</div>`;
     return;
   }
 
@@ -3102,8 +3296,18 @@ function initLoginModal() {
   document.getElementById("orb-x-register")?.addEventListener("click", () => console.log("[X Register]"));
 }
 
+// ===== 語言切換初始化 =====
+function initLangSwitcher() {
+  applyLang(getLang());
+  document.getElementById("lang-switcher")?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".lang-btn");
+    if (btn) setLang(btn.getAttribute("data-lang"));
+  });
+}
+
 // ===== 初始化 =====
 document.addEventListener("DOMContentLoaded", () => {
+  initLangSwitcher();
   renderNews(NEWS_DATA);
   initFilters();
   initSearch();

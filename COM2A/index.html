@@ -825,19 +825,19 @@
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="vertical-align:-1px">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
           </svg>
-          Events
+          <span data-i18n="nav.events">Events</span>
         </a>
         <a href="#" class="nav-item" id="nav-crypto">
           <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24" style="vertical-align:-1px">
             <path d="M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z"/>
           </svg>
-          Crypto
+          <span data-i18n="nav.crypto">Crypto</span>
         </a>
         <a href="#" class="nav-item" id="nav-sports">
           <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24" style="vertical-align:-1px">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
           </svg>
-          Sports
+          <span data-i18n="nav.sports">Sports</span>
         </a>
         <a href="#" class="nav-item" id="nav-intel">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-1px">
@@ -845,13 +845,13 @@
             <line x1="2" y1="12" x2="22" y2="12"/>
             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
           </svg>
-          Intel
+          <span data-i18n="nav.intel">Intel</span>
         </a>
         <a href="#" class="nav-item" id="nav-watchlist">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-1px">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
           </svg>
-          Watchlist
+          <span data-i18n="nav.watchlist">Watchlist</span>
           <span class="watchlist-count" id="watchlist-count" style="display:none">0</span>
         </a>
       </nav>
@@ -861,7 +861,7 @@
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
         </svg>
-        <input type="text" id="navbar-search-input" placeholder="Search markets..." autocomplete="off"/>
+        <input type="text" id="navbar-search-input" data-i18n-placeholder="search.placeholder" placeholder="Search markets..." autocomplete="off"/>
         <button class="search-clear" id="search-clear" style="display:none">✕</button>
       </div>
 
@@ -870,14 +870,23 @@
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          Portfolio
+          <span data-i18n="nav.portfolio">Portfolio</span>
         </button>
         <button class="btn-login" id="btn-login">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
           </svg>
-          Log In
+          <span data-i18n="nav.logIn">Log In</span>
         </button>
+        <div class="lang-switcher" id="lang-switcher" title="Switch language">
+          <button type="button" class="lang-btn" data-lang="en">EN</button>
+          <span class="lang-divider">|</span>
+          <button type="button" class="lang-btn" data-lang="zh">中</button>
+          <span class="lang-divider">|</span>
+          <button type="button" class="lang-btn" data-lang="ja">日</button>
+          <span class="lang-divider">|</span>
+          <button type="button" class="lang-btn" data-lang="ko">韓</button>
+        </div>
       </div>
     </div>
   </header>
@@ -906,18 +915,18 @@
 
       <!-- ── 畫面 1：登入 ── -->
       <div class="auth-screen" id="screen-login">
-        <h2 class="login-title">Welcome back</h2>
-        <p class="login-sub">Log in to your account</p>
+        <h2 class="login-title" data-i18n="login.welcomeBack">Welcome back</h2>
+        <p class="login-sub" data-i18n="login.subtitle">Log in to your account</p>
 
         <div class="login-field-group">
           <div class="login-field">
-            <label>Email</label>
+            <label data-i18n="login.email">Email</label>
             <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email"/>
           </div>
           <div class="login-field">
             <label>
-              Password
-              <a href="#" class="login-forgot" id="go-forgot">Forgot password?</a>
+              <span data-i18n="login.password">Password</span>
+              <a href="#" class="login-forgot" id="go-forgot" data-i18n="login.forgotPassword">Forgot password?</a>
             </label>
             <div class="login-pw-wrap">
               <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"/>
@@ -929,7 +938,7 @@
           </div>
         </div>
 
-        <button class="login-submit-btn" id="btn-email-login">Log In</button>
+        <button class="login-submit-btn" id="btn-email-login" data-i18n="login.logIn">Log In</button>
 
         <div class="login-divider"><span>or</span></div>
 
@@ -955,7 +964,7 @@
           </button>
         </div>
 
-        <p class="login-switch">Don't have an account? <a href="#" id="go-register">Sign up</a></p>
+        <p class="login-switch"><span data-i18n="login.noAccount">Don't have an account?</span> <a href="#" id="go-register" data-i18n="login.signUp">Sign up</a></p>
         <p class="login-footer">By continuing you agree to our <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a></p>
       </div>
 
@@ -1083,13 +1092,13 @@
           </div>
           <!-- 篩選列 -->
           <div class="filters-row">
-            <span class="filter-label">Sort</span>
-            <button class="filter-btn active" data-order="volume24hr">24h Volume</button>
-            <button class="filter-btn" data-order="liquidity">Liquidity</button>
-            <button class="filter-btn" data-order="newest">Newest</button>
-            <button class="filter-btn" data-order="endDate">Ending Soon</button>
+            <span class="filter-label" data-i18n="filter.sort">Sort</span>
+            <button class="filter-btn active" data-order="volume24hr"><span data-i18n="filter.volume24hr">24h Volume</span></button>
+            <button class="filter-btn" data-order="liquidity"><span data-i18n="filter.liquidity">Liquidity</span></button>
+            <button class="filter-btn" data-order="newest"><span data-i18n="filter.newest">Newest</span></button>
+            <button class="filter-btn" data-order="endDate"><span data-i18n="filter.endingSoon">Ending Soon</span></button>
             <div style="flex:1"></div>
-            <button class="filter-btn watchlist-toggle" id="watchlist-toggle">★ Watchlist</button>
+            <button class="filter-btn watchlist-toggle" id="watchlist-toggle">★ <span data-i18n="filter.watchlist">Watchlist</span></button>
           </div>
           <!-- 市場列表 -->
           <div class="markets-list" id="markets-list"></div>
@@ -1220,7 +1229,7 @@
               </div>
               <div class="port-pos-search">
                 <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                <input type="text" id="port-pos-search-input" placeholder="Search markets..."/>
+                <input type="text" id="port-pos-search-input" data-i18n-placeholder="search.placeholder" placeholder="Search markets..."/>
               </div>
             </div>
             <div id="positions-table"></div>
@@ -1334,10 +1343,10 @@
                   <button class="crypto-type-btn" data-type="hit">Hit Price</button>
                 </div>
                 <div style="flex:1"></div>
-                <span class="filter-label">Sort</span>
-                <button class="sports-filter-btn active" data-order="volume24hr" id="crypto-sort-vol">24h Volume</button>
-                <button class="sports-filter-btn" data-order="liquidity" id="crypto-sort-liq">Liquidity</button>
-                <button class="sports-filter-btn" data-order="endDate" id="crypto-sort-end">Ending Soon</button>
+                <span class="filter-label" data-i18n="filter.sort">Sort</span>
+                <button class="sports-filter-btn active" data-order="volume24hr" id="crypto-sort-vol"><span data-i18n="filter.volume24hr">24h Volume</span></button>
+                <button class="sports-filter-btn" data-order="liquidity" id="crypto-sort-liq"><span data-i18n="filter.liquidity">Liquidity</span></button>
+                <button class="sports-filter-btn" data-order="endDate" id="crypto-sort-end"><span data-i18n="filter.endingSoon">Ending Soon</span></button>
               </div>
               <!-- 市場列表 -->
               <div class="markets-list" id="crypto-markets-list"></div>
@@ -1371,10 +1380,10 @@
             <div class="sports-main">
               <!-- 排序列 -->
               <div class="filters-row sports-filters-row">
-                <span class="filter-label">Sort</span>
-                <button class="sports-filter-btn active" data-order="volume24hr">24h Volume</button>
-                <button class="sports-filter-btn" data-order="liquidity">Liquidity</button>
-                <button class="sports-filter-btn" data-order="endDate">Ending Soon</button>
+                <span class="filter-label" data-i18n="filter.sort">Sort</span>
+                <button class="sports-filter-btn active" data-order="volume24hr"><span data-i18n="filter.volume24hr">24h Volume</span></button>
+                <button class="sports-filter-btn" data-order="liquidity"><span data-i18n="filter.liquidity">Liquidity</span></button>
+                <button class="sports-filter-btn" data-order="endDate"><span data-i18n="filter.endingSoon">Ending Soon</span></button>
               </div>
               <!-- 體育市場列表 -->
               <div class="markets-list" id="sports-markets-list"></div>
@@ -1620,7 +1629,7 @@
 
         <!-- 最近交易 -->
         <div class="sidebar-card">
-          <h3 class="card-title">Recent Trades</h3>
+          <h3 class="card-title" data-i18n="sidebar.recentTrades">Recent Trades</h3>
           <div class="trades-list" id="trades-list">
             <!-- 由 JS 填充 -->
           </div>
@@ -1629,7 +1638,7 @@
         <!-- Top Traders -->
         <div class="sidebar-card">
           <div class="card-title-row">
-            <h3 class="card-title">Top Traders</h3>
+            <h3 class="card-title" data-i18n="sidebar.topTraders">Top Traders</h3>
             <span class="card-subtitle">24h</span>
           </div>
           <div class="traders-list" id="traders-list">
@@ -1640,8 +1649,8 @@
         <!-- 新聞 -->
         <div class="sidebar-card">
           <div class="news-header">
-            <h3 class="card-title">News</h3>
-            <button class="news-scope active">Global</button>
+            <h3 class="card-title" data-i18n="sidebar.news">News</h3>
+            <button class="news-scope active" data-i18n="common.global">Global</button>
           </div>
           <div class="news-list" id="news-list">
             <!-- 由 JS 填充 -->
