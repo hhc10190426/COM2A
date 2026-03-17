@@ -492,100 +492,39 @@
     }
 
     /* ── Auth Orbs ── */
-    @keyframes orbFloat1 {
-      0%, 100% { transform: translateY(0px); }
-      50%       { transform: translateY(-7px); }
-    }
-    @keyframes orbFloat2 {
-      0%, 100% { transform: translateY(-4px); }
-      50%       { transform: translateY(3px); }
-    }
-    @keyframes orbPulseGoogle {
-      0%, 100% { box-shadow: inset -5px -5px 10px rgba(0,0,0,0.18), inset 3px 3px 8px rgba(255,255,255,0.95), 0 0 22px rgba(66,133,244,0.5), 0 0 44px rgba(52,168,83,0.3), 0 12px 32px rgba(0,0,0,0.35); }
-      50%       { box-shadow: inset -5px -5px 10px rgba(0,0,0,0.18), inset 3px 3px 8px rgba(255,255,255,0.95), 0 0 32px rgba(234,67,53,0.5), 0 0 60px rgba(251,188,5,0.35), 0 12px 32px rgba(0,0,0,0.35); }
-    }
-    @keyframes orbPulseX {
-      0%, 100% { box-shadow: inset -5px -5px 10px rgba(0,0,0,0.6), inset 3px 3px 8px rgba(255,255,255,0.12), 0 0 28px rgba(255,255,255,0.45), 0 12px 32px rgba(0,0,0,0.5); }
-      50%       { box-shadow: inset -5px -5px 10px rgba(0,0,0,0.6), inset 3px 3px 8px rgba(255,255,255,0.12), 0 0 44px rgba(255,255,255,0.6), 0 12px 32px rgba(0,0,0,0.5); }
-    }
-
     .auth-orbs {
-      display: flex; justify-content: center; gap: 40px;
-      padding: 12px 0 20px; margin-bottom: 4px;
+      display: flex; justify-content: center; gap: 32px;
+      padding: 10px 0 18px; margin-bottom: 4px;
     }
     .auth-orb {
-      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 9px;
       background: none; border: none; cursor: pointer; padding: 0;
     }
     .orb-surface {
-      width: 82px; height: 82px; border-radius: 50%;
+      width: 72px; height: 72px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      position: relative; overflow: hidden;
-      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      transition: opacity 0.15s;
     }
-    /* Reflection highlight */
-    .orb-surface::before {
-      content: ''; position: absolute;
-      top: 9px; left: 13px;
-      width: 30px; height: 18px; border-radius: 50%;
-      background: rgba(255,255,255,0.55);
-      filter: blur(4px); transform: rotate(-30deg);
-      pointer-events: none; z-index: 2;
-    }
-    /* Bottom shadow depth */
-    .orb-surface::after {
-      content: ''; position: absolute;
-      bottom: 6px; left: 50%; transform: translateX(-50%);
-      width: 50px; height: 12px; border-radius: 50%;
-      background: rgba(0,0,0,0.25); filter: blur(6px);
-      pointer-events: none; z-index: 0;
-    }
+    .auth-orb:hover .orb-surface { opacity: 0.82; }
+    .auth-orb:active .orb-surface { opacity: 0.65; }
 
-    /* Google orb */
-    .orb-google { animation: orbFloat1 3.2s ease-in-out infinite; }
     .orb-google .orb-surface {
-      background: radial-gradient(circle at 36% 34%, #ffffff 0%, #e8e8e8 45%, #c4c4c4 100%);
-      box-shadow:
-        inset -5px -5px 10px rgba(0,0,0,0.15),
-        inset 3px 3px 8px rgba(255,255,255,0.95),
-        0 8px 28px rgba(0,0,0,0.3);
+      background: #f1f1f1;
+      border: 1.5px solid rgba(255,255,255,0.12);
     }
-    .orb-google:hover { animation-play-state: paused; }
-    .orb-google:hover .orb-surface {
-      transform: scale(1.18) translateY(-4px);
-      animation: orbPulseGoogle 1.4s ease-in-out infinite;
-    }
-    .orb-google:active .orb-surface { transform: scale(1.06) translateY(-1px); }
-    .orb-google .orb-surface::before { background: rgba(255,255,255,0.65); }
-
-    /* X orb */
-    .orb-x { animation: orbFloat2 3.8s ease-in-out infinite; }
     .orb-x .orb-surface {
-      background: radial-gradient(circle at 36% 34%, #3d3d3d 0%, #1a1a1a 45%, #080808 100%);
-      box-shadow:
-        inset -5px -5px 10px rgba(0,0,0,0.55),
-        inset 3px 3px 8px rgba(255,255,255,0.1),
-        0 8px 28px rgba(0,0,0,0.45);
+      background: #000;
+      border: 1.5px solid rgba(255,255,255,0.12);
     }
-    .orb-x:hover { animation-play-state: paused; }
-    .orb-x:hover .orb-surface {
-      transform: scale(1.18) translateY(-4px);
-      animation: orbPulseX 1.4s ease-in-out infinite;
-    }
-    .orb-x:active .orb-surface { transform: scale(1.06) translateY(-1px); }
-    .orb-x .orb-surface::before { background: rgba(255,255,255,0.18); }
 
     /* Label */
     .orb-label {
       font-size: 11px; font-weight: 600; white-space: nowrap;
       color: var(--text-muted); letter-spacing: 0.02em;
-      opacity: 0; transform: translateY(5px);
-      transition: opacity 0.22s ease, transform 0.22s ease, color 0.22s ease;
+      opacity: 0; transition: opacity 0.18s ease, color 0.18s ease;
       pointer-events: none;
     }
-    .auth-orb:hover .orb-label {
-      opacity: 1; transform: translateY(0); color: var(--text-primary);
-    }
+    .auth-orb:hover .orb-label { opacity: 1; color: var(--text-primary); }
 
     /* 切換畫面 */
     .login-switch {
