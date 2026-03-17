@@ -1054,11 +1054,12 @@ async function openBinaryDetailModal(m, yesPct, noPct, vol24h, oi, endDate, icon
 }
 
 // ===== 下單 Modal =====
-function openBuyModal(event, question, side, price) {
+function openBuyModal(event, question, side, price, initialAmount) {
   if (event) event.stopPropagation();
   const existing = document.getElementById("trade-modal");
   if (existing) existing.remove();
 
+  const amtVal = (parseFloat(initialAmount) > 0 ? parseFloat(initialAmount) : 10).toFixed(2);
   const overlay = document.createElement("div");
   overlay.id = "trade-modal";
   overlay.className = "modal-overlay";
@@ -1073,7 +1074,7 @@ function openBuyModal(event, question, side, price) {
         <label>Amount (USD)</label>
         <div class="trade-input-wrap">
           <span class="trade-input-prefix">$</span>
-          <input type="number" id="trade-amount" class="trade-input" placeholder="0.00" min="1" step="1" value="10"/>
+          <input type="number" id="trade-amount" class="trade-input" placeholder="0.00" min="1" step="1" value="${amtVal}"/>
         </div>
       </div>
       <div class="trade-summary">
@@ -1083,11 +1084,11 @@ function openBuyModal(event, question, side, price) {
         </div>
         <div class="trade-summary-row">
           <span>Est. shares</span>
-          <span class="stat-value" id="est-shares">${(10 / (price / 100)).toFixed(2)}</span>
+          <span class="stat-value" id="est-shares">${(parseFloat(amtVal) / (price / 100)).toFixed(2)}</span>
         </div>
         <div class="trade-summary-row">
           <span>Est. max payout</span>
-          <span class="stat-value green" id="est-payout">$${(10 / (price / 100)).toFixed(2)}</span>
+          <span class="stat-value green" id="est-payout">$${(parseFloat(amtVal) / (price / 100)).toFixed(2)}</span>
         </div>
       </div>
       <button class="btn-accept" id="confirm-trade" style="margin-top:8px">
@@ -2692,12 +2693,22 @@ function renderMarketDetail(market) {
   const selOutcome = market.outcomes[mktSelectedOutcome === "yes" ? 0 : 1];
   document.getElementById("mkt-avg-price").textContent = `${(selOutcome.price).toFixed(3)} USDC`;
   const confirmBtn = document.getElementById("mkt-confirm-btn");
+  const amtInput   = document.getElementById("mkt-amount");
   if (confirmBtn) {
     confirmBtn.textContent = `Buy ${selOutcome.label}`;
     confirmBtn.className   = `mkt-confirm-btn${mktSelectedOutcome === "no" ? " no-mode" : ""}`;
+    confirmBtn.onclick = (e) => {
+      const amt = parseFloat(amtInput?.value || 0) || 10;
+      openBuyModal(e, market.title, selOutcome.label, Math.round(selOutcome.price * 100), amt);
+    };
   }
+  // Max 按鈕（Demo 模式填 100）
+  const maxBtn = document.querySelector(".mkt-max-btn");
+  if (maxBtn) maxBtn.onclick = (e) => {
+    e.stopPropagation();
+    if (amtInput) { amtInput.value = "100"; amtInput.dispatchEvent(new Event("input")); }
+  };
   // Potential return from amount input
-  const amtInput = document.getElementById("mkt-amount");
   const calcReturn = () => {
     const amt     = parseFloat(amtInput?.value || 0);
     const shares  = amt > 0 ? (amt / selOutcome.price).toFixed(2) : "—";
