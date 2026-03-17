@@ -9,7 +9,7 @@
   <meta http-equiv="Expires" content="0"/>
   <link rel="preconnect" href="https://fonts.bunny.net" crossorigin />
   <link rel="stylesheet" href="https://fonts.bunny.net/css?family=space-grotesk:300,400,500,600,700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=29" />
+  <link rel="stylesheet" href="styles.css?v=30" />
   <style>
     /* ── 核心修復：防止 feed-area 被 tabs 撐破 grid ── */
     .content-grid {
@@ -55,7 +55,7 @@
       height: 480px;
       border-radius: 12px;
       overflow: hidden;
-      border: 1px solid var(--border, #2a2a38);
+      border: 1px solid var(--border, #2d3548);
       margin-bottom: 16px;
       background: #0a0a10;
       position: relative;
@@ -95,11 +95,11 @@
       max-height: 420px;
       overflow-y: auto;
       scrollbar-width: thin;
-      scrollbar-color: var(--border, #2a2a38) transparent;
+      scrollbar-color: var(--border, #2d3548) transparent;
       padding-right: 4px;
     }
     .threat-events-list::-webkit-scrollbar { width: 4px; }
-    .threat-events-list::-webkit-scrollbar-thumb { background: var(--border, #2a2a38); border-radius: 4px; }
+    .threat-events-list::-webkit-scrollbar-thumb { background: var(--border, #2d3548); border-radius: 4px; }
 
     /* Intel view 側邊欄固定，不跟著事件列表滾動 */
     #view-intel .sports-body { align-items: flex-start; }
@@ -109,21 +109,21 @@
       max-height: calc(100vh - 100px);
       overflow-y: auto;
       scrollbar-width: thin;
-      scrollbar-color: var(--border, #2a2a38) transparent;
+      scrollbar-color: var(--border, #2d3548) transparent;
     }
     .threat-event-card {
-      background: var(--bg-card, #1a1a24);
-      border: 1px solid var(--border, #2a2a38);
+      background: var(--bg-card, #1a1f28);
+      border: 1px solid var(--border, #2d3548);
       border-radius: 10px; padding: 12px 14px;
       cursor: pointer;
       transition: border-color 0.2s, background 0.2s;
     }
     .threat-event-card:hover {
-      border-color: var(--border-light, #32324a);
-      background: var(--bg-card-hover, #1e1e2a);
+      border-color: var(--border-light, #3d4659);
+      background: var(--bg-card-hover, #1e242e);
     }
     .threat-event-card.active-card {
-      border-color: rgba(37,99,235,0.5);
+      border-color: rgba(59,130,246,0.5);
     }
     .threat-card-top {
       display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px;
@@ -153,7 +153,7 @@
     }
     .threat-cat-tag {
       padding: 1px 6px; border-radius: 4px;
-      background: rgba(0,0,0,0.04);
+      background: rgba(255,255,255,0.06);
       font-size: 10px; text-transform: capitalize; color: var(--text-secondary);
     }
     /* ══ Portfolio 重新設計樣式 ══ */
@@ -215,8 +215,8 @@
       cursor: text; transition: background 0.15s;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .port-nickname:hover   { background: rgba(0,0,0,0.04); }
-    .port-nickname:focus   { background: rgba(0,0,0,0.06); }
+    .port-nickname:hover   { background: rgba(255,255,255,0.06); }
+    .port-nickname:focus   { background: rgba(255,255,255,0.12); }
     .port-profile-badge {
       display: flex; align-items: center; gap: 5px;
       font-size: 11px; color: var(--text-muted); margin-top: 4px;
@@ -228,10 +228,10 @@
     .port-edit-hint {
       display: flex; align-items: center; justify-content: center;
       width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
-      background: rgba(0,0,0,0.03); border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
       color: var(--text-muted); cursor: pointer; transition: background 0.15s, color 0.15s;
     }
-    .port-edit-hint:hover { background: rgba(0,0,0,0.06); color: var(--text-primary); }
+    .port-edit-hint:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); }
 
     /* 數字區塊 */
     .port-total-block { margin-bottom: 16px; margin-top: 6px; }
@@ -265,10 +265,10 @@
     .port-act-btn {
       flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
       padding: 8px 6px; border-radius: 8px; font-size: 12px; font-weight: 600;
-      background: rgba(0,0,0,0.03); border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
       color: var(--text-primary); cursor: pointer; transition: background 0.15s;
     }
-    .port-act-btn:hover  { background: rgba(0,0,0,0.06); }
+    .port-act-btn:hover  { background: rgba(255,255,255,0.12); }
     .port-act-btn.primary{ background: var(--accent); border-color: var(--accent); color: #fff; }
     .port-act-btn.primary:hover{ background: var(--accent-hover); }
 
@@ -319,7 +319,7 @@
     .port-pos-tab.active { color: var(--text-primary); border-bottom-color: var(--accent); }
     .port-pos-search {
       display: flex; align-items: center; gap: 7px;
-      background: rgba(0,0,0,0.02); border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
       border-radius: 7px; padding: 6px 11px;
     }
     .port-pos-search input {
@@ -333,16 +333,16 @@
     .pos-table-v2 th {
       padding: 9px 16px; text-align: left; font-size: 11px; font-weight: 600;
       color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
-      background: rgba(0,0,0,0.01); border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border);
     }
     .pos-table-v2 th:not(:first-child) { text-align: right; }
     .pos-table-v2 td {
       padding: 13px 16px; font-size: 13px;
-      border-bottom: 1px solid rgba(0,0,0,0.02); vertical-align: middle;
+      border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle;
     }
     .pos-table-v2 td:not(:first-child) { text-align: right; }
     .pos-table-v2 tr:last-child td     { border-bottom: none; }
-    .pos-table-v2 tr:hover td          { background: rgba(0,0,0,0.02); }
+    .pos-table-v2 tr:hover td          { background: rgba(255,255,255,0.04); }
     .pos-market-cell { display: flex; align-items: flex-start; gap: 10px; }
     .pos-platform-icon {
       width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0; margin-top: 1px;
@@ -401,10 +401,10 @@
 
     .login-modal {
       position: relative;
-      background: #ffffff; border: 1px solid rgba(0,0,0,0.08);
+      background: #1a1f28; border: 1px solid rgba(255,255,255,0.08);
       border-radius: 18px; padding: 28px 28px 24px;
       width: 100%; max-width: 400px;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.15);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
       animation: slideUpModal 0.25s cubic-bezier(0.34,1.56,0.64,1);
     }
     @keyframes slideUpModal {
@@ -417,12 +417,12 @@
       margin-bottom: 16px;
     }
     .login-close, .login-back {
-      background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08);
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
       border-radius: 8px; width: 32px; height: 32px;
       display: flex; align-items: center; justify-content: center;
       color: var(--text-muted); cursor: pointer; transition: background 0.15s, color 0.15s;
     }
-    .login-close:hover, .login-back:hover { background: rgba(0,0,0,0.08); color: var(--text-primary); }
+    .login-close:hover, .login-back:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); }
     .login-back { margin-right: auto; }
 
     .login-logo {
@@ -454,7 +454,7 @@
     .login-forgot:hover { text-decoration: underline; }
     .login-field input {
       width: 100%; padding: 10px 12px; border-radius: 9px;
-      background: rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.06);
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
       color: var(--text-primary); font-size: 13px; outline: none;
       transition: border-color 0.15s, background 0.15s;
       box-sizing: border-box;
@@ -490,7 +490,7 @@
       margin-bottom: 12px; color: var(--text-muted); font-size: 11px;
     }
     .login-divider::before, .login-divider::after {
-      content: ''; flex: 1; height: 1px; background: rgba(0,0,0,0.06);
+      content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.12);
     }
 
     /* ── Auth Orbs ── */
@@ -512,11 +512,11 @@
 
     .orb-google .orb-surface {
       background: #f1f1f1;
-      border: 1.5px solid rgba(0,0,0,0.08);
+      border: 1.5px solid rgba(255,255,255,0.08);
     }
     .orb-x .orb-surface {
       background: #000;
-      border: 1.5px solid rgba(0,0,0,0.08);
+      border: 1.5px solid rgba(255,255,255,0.08);
     }
 
     /* Label */
@@ -558,12 +558,12 @@
     }
     .mkt-back-btn {
       display: flex; align-items: center; gap: 5px;
-      background: rgba(0,0,0,0.04); border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
       color: var(--text-secondary); font-size: 13px; font-weight: 600;
       padding: 6px 14px; border-radius: 8px; cursor: pointer;
       transition: background 0.15s, color 0.15s;
     }
-    .mkt-back-btn:hover { background: rgba(0,0,0,0.06); color: var(--text-primary); }
+    .mkt-back-btn:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); }
     .mkt-breadcrumb { font-size: 12px; color: var(--text-muted); }
 
     .mkt-title-row {
@@ -626,7 +626,7 @@
       border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px;
     }
     .mkt-trade-tabs {
-      display: flex; background: rgba(0,0,0,0.02);
+      display: flex; background: rgba(255,255,255,0.04);
       border-radius: 8px; padding: 3px; gap: 2px;
     }
     .mkt-ttab {
@@ -642,10 +642,10 @@
     .mkt-type-btn {
       flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);
       font-size: 12px; font-weight: 600; cursor: pointer;
-      background: rgba(0,0,0,0.02); color: var(--text-muted);
+      background: rgba(255,255,255,0.04); color: var(--text-muted);
       transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
-    .mkt-type-btn:hover { background: rgba(0,0,0,0.04); color: var(--text-secondary); }
+    .mkt-type-btn:hover { background: rgba(255,255,255,0.06); color: var(--text-secondary); }
     .mkt-type-btn.active { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.35); color: var(--accent); }
 
     .mkt-limit-field { margin-top: 0; }
@@ -658,16 +658,16 @@
     .mkt-quick-price, .mkt-quick-amt {
       padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border);
       font-size: 11px; font-weight: 600; cursor: pointer;
-      background: rgba(0,0,0,0.02); color: var(--text-secondary);
+      background: rgba(255,255,255,0.04); color: var(--text-secondary);
       transition: background 0.15s, color 0.15s;
     }
-    .mkt-quick-price:hover, .mkt-quick-amt:hover { background: rgba(0,0,0,0.06); color: var(--text-primary); }
+    .mkt-quick-price:hover, .mkt-quick-amt:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); }
 
     .mkt-oc-row { display: flex; gap: 6px; }
     .mkt-oc-btn {
       flex: 1; padding: 8px; border-radius: 8px; border: 1.5px solid var(--border);
       font-size: 13px; font-weight: 700; cursor: pointer;
-      background: rgba(0,0,0,0.02); color: var(--text-muted);
+      background: rgba(255,255,255,0.04); color: var(--text-muted);
       transition: all 0.15s;
     }
     .mkt-oc-btn.sel-yes { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #22c55e; }
@@ -677,21 +677,21 @@
     .mkt-amount-wrap { display: flex; gap: 6px; }
     .mkt-amount-input {
       flex: 1; padding: 9px 12px; border-radius: 8px;
-      background: rgba(0,0,0,0.03); border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
       color: var(--text-primary); font-size: 14px; outline: none;
       transition: border-color 0.15s;
     }
     .mkt-amount-input:focus { border-color: var(--accent); }
     .mkt-max-btn {
       padding: 9px 14px; border-radius: 8px; border: 1px solid var(--border);
-      background: rgba(0,0,0,0.03); color: var(--text-muted);
+      background: rgba(255,255,255,0.05); color: var(--text-muted);
       font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.15s;
     }
-    .mkt-max-btn:hover { background: rgba(0,0,0,0.06); }
+    .mkt-max-btn:hover { background: rgba(255,255,255,0.12); }
 
     .mkt-trade-info-row {
       display: flex; flex-direction: column; gap: 6px;
-      background: rgba(0,0,0,0.02); border-radius: 8px; padding: 10px 12px;
+      background: rgba(255,255,255,0.04); border-radius: 8px; padding: 10px 12px;
     }
     .mkt-tinfo {
       display: flex; justify-content: space-between; align-items: center;
@@ -738,7 +738,7 @@
       font-size: 11px; font-weight: 600; cursor: pointer;
       background: none; color: var(--text-muted); transition: background 0.15s, color 0.15s;
     }
-    .mkt-rng-btn.active { background: rgba(0,0,0,0.06); color: var(--text-primary); }
+    .mkt-rng-btn.active { background: rgba(255,255,255,0.12); color: var(--text-primary); }
     .mkt-chart-wrap { width: 100%; }
     .mkt-chart-wrap svg { width: 100%; display: block; }
     .mkt-chart-legend {
@@ -800,10 +800,10 @@
 
     /* Globe.gl tooltip 覆寫 */
     .scene-tooltip {
-      background: #ffffff !important; border: 1px solid #e4e7ed !important;
-      border-radius: 10px !important; color: #1a1d24 !important;
+      background: #1a1f28 !important; border: 1px solid #2d3548 !important;
+      border-radius: 10px !important; color: #e8ecf4 !important;
       font-family: 'Space Grotesk', sans-serif !important;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
       pointer-events: none !important;
     }
   </style>
@@ -817,7 +817,7 @@
     <div class="navbar-inner">
       <a href="#" class="logo">
         <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-          <circle cx="16" cy="16" r="16" fill="#2563eb"/>
+          <circle cx="16" cy="16" r="16" fill="#3b82f6"/>
           <text x="16" y="21" text-anchor="middle" fill="white" font-size="14" font-weight="bold">C</text>
         </svg>
         <span>COM2A</span>
@@ -899,7 +899,7 @@
 
       <div class="login-logo">
         <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
-          <circle cx="16" cy="16" r="16" fill="#2563eb"/>
+          <circle cx="16" cy="16" r="16" fill="#3b82f6"/>
           <text x="16" y="21" text-anchor="middle" fill="white" font-size="14" font-weight="bold">C</text>
         </svg>
         <span>COM2A</span>
@@ -1153,7 +1153,7 @@
                   <span class="port-cash-amount" id="port-cash-num">--</span>
                 </div>
                 <div class="port-chain-row">
-                  <span class="port-chain-dot" style="background:#2563eb"></span>
+                  <span class="port-chain-dot" style="background:#3b82f6"></span>
                   <span>Polymarket USDC</span>
                   <span class="port-chain-amount" id="port-usdc-num">--</span>
                 </div>
@@ -1389,7 +1389,7 @@
           <!-- 標題列 -->
           <div class="sports-header-row">
             <div class="sports-title-wrap">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:#2563eb">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:#3b82f6">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="2" y1="12" x2="22" y2="12"/>
                 <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>

@@ -2170,7 +2170,7 @@ function renderEquityChart() {
                   stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
         <line id="eq-vline" x1="0" y1="${P.t}" x2="0" y2="${H - P.b}"
               stroke="rgba(255,255,255,0.35)" stroke-width="1" stroke-dasharray="3,2" display="none"/>
-        <circle id="eq-dot" r="4.5" fill="${color}" stroke="#ffffff" stroke-width="2" display="none"/>
+        <circle id="eq-dot" r="4.5" fill="${color}" stroke="#161b23" stroke-width="2" display="none"/>
         <rect id="eq-overlay" x="${P.l}" y="${P.t}" width="${CW}" height="${CH}"
               fill="transparent" style="cursor:crosshair"/>
       </svg>
@@ -2636,7 +2636,7 @@ function renderMktChart(market) {
     // Y ticks (0%, 25%, 50%, 75%, 100%)
     const yTicks = [0,1,2,3,4].map(i => {
       const v = i * 0.25;
-      return `<text x="${P.l-8}" y="${(yS(v)+4).toFixed(1)}" text-anchor="end" fill="#8b92a0" font-size="10">${i*25}%</text>
+      return `<text x="${P.l-8}" y="${(yS(v)+4).toFixed(1)}" text-anchor="end" fill="#5a6278" font-size="10">${i*25}%</text>
               <line x1="${P.l}" y1="${yS(v).toFixed(1)}" x2="${W-P.r}" y2="${yS(v).toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
     }).join("");
 
@@ -2644,7 +2644,7 @@ function renderMktChart(market) {
     const xTicks = xIdxs.map(i => {
       const d = data[i];
       const label = d.t instanceof Date ? d.t.toLocaleDateString("en-US", { month:"short", day:"numeric" }) : "";
-      return `<text x="${xS(i).toFixed(1)}" y="${H-P.b+14}" text-anchor="middle" fill="#8b92a0" font-size="10">${label}</text>`;
+      return `<text x="${xS(i).toFixed(1)}" y="${H-P.b+14}" text-anchor="middle" fill="#5a6278" font-size="10">${label}</text>`;
     }).join("");
 
     const lines = outcomes.map((o, oi) => {
@@ -2670,7 +2670,7 @@ function renderMktChart(market) {
       const areaPts = `${l.pts} ${lastPt},${H-P.b} ${firstPt},${H-P.b}`;
       return `<polyline fill="url(#mktGrad${i})" stroke="none" points="${areaPts}"/>
               <polyline fill="none" stroke="${l.color}" stroke-width="2" stroke-linejoin="round" points="${l.pts}"/>
-              <circle cx="${l.lastX}" cy="${l.lastY}" r="3.5" fill="${l.color}" stroke="#ffffff" stroke-width="1.5"/>
+              <circle cx="${l.lastX}" cy="${l.lastY}" r="3.5" fill="${l.color}" stroke="#161b23" stroke-width="1.5"/>
               <text x="${parseFloat(l.lastX)+6}" y="${parseFloat(l.lastY)+4}" fill="${l.color}" font-size="10" font-weight="700">${l.lastPct}%</text>`;
     }).join("");
 
@@ -2700,7 +2700,7 @@ function renderMktChart(market) {
 
     const yTicks = [0,1,2,3].map(i => {
       const v = minY + (yR * i / 3);
-      return `<text x="${P.l-6}" y="${(yS(v)+4).toFixed(1)}" text-anchor="end" fill="#8b92a0" font-size="10">${Math.round(v*100)}¢</text>
+      return `<text x="${P.l-6}" y="${(yS(v)+4).toFixed(1)}" text-anchor="end" fill="#5a6278" font-size="10">${Math.round(v*100)}¢</text>
               <line x1="${P.l}" y1="${yS(v).toFixed(1)}" x2="${W-P.r}" y2="${yS(v).toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
     }).join("");
 
@@ -2708,7 +2708,7 @@ function renderMktChart(market) {
     const xTicks = xIdxs.map(i => {
       const d = data[i];
       const label = d.t instanceof Date ? d.t.toLocaleDateString("en-US", { month:"short", day:"numeric" }) : "";
-      return `<text x="${xS(i).toFixed(1)}" y="${H-P.b+14}" text-anchor="middle" fill="#8b92a0" font-size="10">${label}</text>`;
+      return `<text x="${xS(i).toFixed(1)}" y="${H-P.b+14}" text-anchor="middle" fill="#5a6278" font-size="10">${label}</text>`;
     }).join("");
 
     const lastX = xS(data.length-1).toFixed(1);
@@ -2725,7 +2725,7 @@ function renderMktChart(market) {
       ${yTicks}${xTicks}
       <polyline fill="url(#mktGrad)" stroke="none" points="${linePts} ${areaClose}"/>
       <polyline fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" points="${linePts}"/>
-      <circle cx="${lastX}" cy="${lastY}" r="4" fill="${color}" stroke="#ffffff" stroke-width="2"/>
+      <circle cx="${lastX}" cy="${lastY}" r="4" fill="${color}" stroke="#161b23" stroke-width="2"/>
       <text x="${parseFloat(lastX)+8}" y="${parseFloat(lastY)+4}" fill="${color}" font-size="11" font-weight="700">${lastPct}¢</text>
     </svg>`;
   }
@@ -3222,7 +3222,7 @@ function getThreatPointRadius(level) {
 
 function buildThreatLabel(ev) {
   const color = getThreatColor(ev.level);
-  return `<div style="background:#ffffff;border:1px solid #e4e7ed;border-radius:10px;padding:12px 14px;max-width:240px;font-family:'Space Grotesk',sans-serif;color:#1a1d24;pointer-events:none">
+  return `<div style="background:#1a1f28;border:1px solid #2d3548;border-radius:10px;padding:12px 14px;max-width:240px;font-family:'Space Grotesk',sans-serif;color:#e8ecf4;pointer-events:none">
     <div style="font-size:10px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">${ev.level}</div>
     <div style="font-size:13px;font-weight:600;color:#e8e8f0;margin-bottom:4px;line-height:1.4">${ev.title}</div>
     <div style="font-size:11px;color:#8888a8;margin-bottom:6px">📍 ${ev.location} · ${ev.time}</div>
@@ -3339,9 +3339,9 @@ async function initThreatGlobe() {
     .width(w).height(h)
     .globeImageUrl("//unpkg.com/three-globe/example/img/earth-night.jpg")
     .bumpImageUrl("//unpkg.com/three-globe/example/img/earth-topology.png")
-    .backgroundColor("#f0f2f6")
+    .backgroundColor("#0f1217")
     .showAtmosphere(true)
-    .atmosphereColor("#2563eb")
+    .atmosphereColor("#3b82f6")
     .atmosphereAltitude(0.13)
     .pointsData(THREAT_EVENTS)
     .pointLat("lat").pointLng("lng")
