@@ -253,12 +253,6 @@ function renderMarkets(events) {
       renderBinaryCard(card, m, ev);
     }
 
-    // 點擊卡片進入詳情（避開 watchlist 按鈕）
-    card.addEventListener("click", (e) => {
-      if (e.target.closest(".watchlist-toggle, .btn-bookmark, [data-wl]")) return;
-      showMarketDetail(ev);
-    });
-
     container.appendChild(card);
   });
 }
@@ -335,8 +329,9 @@ function renderEventCard(card, ev) {
     showToast(added ? "Added to Watchlist ★" : "Removed from Watchlist");
   });
 
-  card.addEventListener("click", () => {
-    openEventDetailModal(ev, markets, markets[0], vol24h, oi, endDate, icon);
+  card.addEventListener("click", (e) => {
+    if (e.target.closest(".card-star-btn")) return;
+    showMarketDetail(ev);
   });
 }
 
@@ -405,9 +400,9 @@ function renderBinaryCard(card, m, parentEvent) {
     showToast(added ? "Added to Watchlist ★" : "Removed from Watchlist");
   });
 
-  card.addEventListener("click", () => {
-    const mWithSlug = { ...m, eventSlug: parentEvent?.slug || m.eventSlug };
-    openBinaryDetailModal(mWithSlug, yesPct, noPct, vol24h, oi, endDate, icon);
+  card.addEventListener("click", (e) => {
+    if (e.target.closest(".btn-trade, .card-star-btn")) return;
+    showMarketDetail(parentEvent);
   });
 }
 
@@ -533,13 +528,108 @@ function renderSkeletons(count = 9) {
   container.innerHTML = skeletonHTML(count);
 }
 
+// ===== 模擬市場資料（無 API 時顯示）=====
+const MOCK_EVENTS = [
+  {
+    id: "fed-rate-march-2026",
+    title: "Will the Fed cut interest rates at the March 2026 FOMC meeting?",
+    image: "https://polymarket-upload.s3.us-east-2.amazonaws.com/will-the-fed-cut-rates-in-march-2026.png",
+    volume24hr: 284500,
+    liquidity: 182500,
+    endDate: "2026-03-19T00:00:00Z",
+    tags: [{ id: "finance", slug: "finance" }, { id: "economy", slug: "economy" }],
+    markets: [{ outcomePrices: [0.72, 0.28], question: "Fed rate cut March 2026", volume24hr: 284500, liquidity: 182500, endDate: "2026-03-19" }],
+  },
+  {
+    id: "btc-100k-2026",
+    title: "Will Bitcoin reach $100,000 by end of 2026?",
+    image: "",
+    volume24hr: 520000,
+    liquidity: 310000,
+    endDate: "2026-12-31T00:00:00Z",
+    tags: [{ id: "crypto", slug: "crypto" }],
+    markets: [{ outcomePrices: [0.58, 0.42], question: "Bitcoin $100K by 2026", volume24hr: 520000, liquidity: 310000, endDate: "2026-12-31" }],
+  },
+  {
+    id: "trump-2028",
+    title: "Will Donald Trump win the 2028 US Presidential Election?",
+    image: "",
+    volume24hr: 890000,
+    liquidity: 450000,
+    endDate: "2028-11-07T00:00:00Z",
+    tags: [{ id: "politics", slug: "politics" }, { id: "elections", slug: "elections" }],
+    markets: [{ outcomePrices: [0.42, 0.58], question: "Trump 2028", volume24hr: 890000, liquidity: 450000, endDate: "2028-11-07" }],
+  },
+  {
+    id: "ai-agi-2030",
+    title: "Will AGI be achieved before January 1, 2030?",
+    image: "",
+    volume24hr: 156000,
+    liquidity: 98000,
+    endDate: "2030-01-01T00:00:00Z",
+    tags: [{ id: "ai", slug: "ai" }, { id: "tech", slug: "tech" }],
+    markets: [{ outcomePrices: [0.31, 0.69], question: "AGI by 2030", volume24hr: 156000, liquidity: 98000, endDate: "2030-01-01" }],
+  },
+  {
+    id: "eth-etf-2025",
+    title: "Will an Ethereum spot ETF be approved by the SEC in 2025?",
+    image: "",
+    volume24hr: 320000,
+    liquidity: 210000,
+    endDate: "2025-12-31T00:00:00Z",
+    tags: [{ id: "crypto", slug: "crypto" }, { id: "finance", slug: "finance" }],
+    markets: [{ outcomePrices: [0.65, 0.35], question: "ETH spot ETF 2025", volume24hr: 320000, liquidity: 210000, endDate: "2025-12-31" }],
+  },
+  {
+    id: "lakers-playoffs",
+    title: "Will the LA Lakers make the 2025 NBA Playoffs?",
+    image: "",
+    volume24hr: 78000,
+    liquidity: 52000,
+    endDate: "2025-04-15T00:00:00Z",
+    tags: [{ id: "sports", slug: "sports" }],
+    markets: [{ outcomePrices: [0.38, 0.62], question: "Lakers 2025 Playoffs", volume24hr: 78000, liquidity: 52000, endDate: "2025-04-15" }],
+  },
+  {
+    id: "oscar-best-picture",
+    title: "Will Oppenheimer win Best Picture at the 2025 Oscars?",
+    image: "",
+    volume24hr: 45000,
+    liquidity: 28000,
+    endDate: "2025-03-02T00:00:00Z",
+    tags: [{ id: "pop-culture", slug: "pop-culture" }],
+    markets: [{ outcomePrices: [0.22, 0.78], question: "Oppenheimer Best Picture", volume24hr: 45000, liquidity: 28000, endDate: "2025-03-02" }],
+  },
+  {
+    id: "ukraine-ceasefire",
+    title: "Russia x Ukraine ceasefire by March 31, 2028?",
+    image: "",
+    volume24hr: 125000,
+    liquidity: 85000,
+    endDate: "2028-03-31T00:00:00Z",
+    tags: [{ id: "geopolitics", slug: "geopolitics" }, { id: "middle-east", slug: "middle-east" }],
+    markets: [{ outcomePrices: [0.28, 0.72], question: "Ukraine ceasefire 2028", volume24hr: 125000, liquidity: 85000, endDate: "2028-03-31" }],
+  },
+  {
+    id: "recession-2025",
+    title: "Will the US enter a recession in 2025?",
+    image: "",
+    volume24hr: 198000,
+    liquidity: 145000,
+    endDate: "2025-12-31T00:00:00Z",
+    tags: [{ id: "economy", slug: "economy" }, { id: "finance", slug: "finance" }],
+    markets: [{ outcomePrices: [0.35, 0.65], question: "US recession 2025", volume24hr: 198000, liquidity: 145000, endDate: "2025-12-31" }],
+  },
+];
+
 // ===== 主要載入流程（唯一負責 fetch events 的地方）=====
 async function loadAll() {
-  // 顯示 Skeleton Loading（等待數據接入，不發 API 請求）
-  renderSkeletons(9);
-  buildTabs();               // 使用 Polymarket 硬編碼分類
+  buildTabs();
   simulateLiveTrades();
-  setApiStatus("pending", "等待數據接入...");
+  // 使用模擬資料（無 API 時）
+  cachedEvents = [...MOCK_EVENTS];
+  setApiStatus("ok", "Demo data loaded");
+  applyCurrentFilters();
 }
 
 // ===== 定期更新交易（每 15 秒）=====
@@ -2553,7 +2643,8 @@ function renderMarketDetail(market) {
   document.getElementById("mkt-breadcrumb")?.setAttribute("data-prev", "events");
 
   // Stats bar
-  document.getElementById("mkt-vol")?.setAttribute  && (document.getElementById("mkt-vol").textContent  = fmtUSD(market.volume24h));
+  const volEl = document.getElementById("mkt-vol");
+  if (volEl) volEl.textContent = fmtUSD(market.volume24h);
   document.getElementById("mkt-liq").textContent  = fmtUSD(market.liquidity);
   document.getElementById("mkt-tvol").textContent = fmtUSD(market.totalVolume);
   document.getElementById("mkt-exp").textContent  = market.endDate;
