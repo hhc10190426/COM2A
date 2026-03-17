@@ -647,6 +647,19 @@
     .mkt-type-btn.active { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.35); color: var(--accent); }
 
     .mkt-limit-field { margin-top: 0; }
+    .mkt-limit-price-row { display: flex; align-items: center; gap: 6px; }
+    .mkt-limit-price-row .mkt-amount-input { flex: 1; }
+    .mkt-price-suffix { font-size: 13px; color: var(--text-muted); }
+    .mkt-price-quick-row, .mkt-amount-quick-row {
+      display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;
+    }
+    .mkt-quick-price, .mkt-quick-amt {
+      padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border);
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      background: rgba(255,255,255,0.04); color: var(--text-secondary);
+      transition: background 0.15s, color 0.15s;
+    }
+    .mkt-quick-price:hover, .mkt-quick-amt:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
 
     .mkt-oc-row { display: flex; gap: 6px; }
     .mkt-oc-btn {
@@ -1507,18 +1520,33 @@
                   <button class="mkt-type-btn" data-type="limit">Limit</button>
                 </div>
                 <div class="mkt-oc-row" id="mkt-oc-row"></div>
+                <div class="mkt-trade-field mkt-limit-field" id="mkt-limit-field" style="display:none">
+                  <label class="mkt-field-label">Price per share</label>
+                  <div class="mkt-limit-price-row">
+                    <input type="number" id="mkt-limit-price" class="mkt-amount-input" placeholder="0.00" min="1" max="99" step="0.1"/>
+                    <span class="mkt-price-suffix">¢</span>
+                  </div>
+                  <div class="mkt-price-quick-row" id="mkt-price-quick">
+                    <button class="mkt-quick-price" data-fill="mid">Mid</button>
+                    <button class="mkt-quick-price" data-fill="ask">Best Ask</button>
+                    <button class="mkt-quick-price" data-fill="bid">Best Bid</button>
+                  </div>
+                </div>
                 <div class="mkt-trade-field">
                   <label class="mkt-field-label">Amount (USDC)</label>
                   <div class="mkt-amount-wrap">
                     <input type="number" id="mkt-amount" class="mkt-amount-input" placeholder="0.00" min="0" step="1"/>
                     <button class="mkt-max-btn">Max</button>
                   </div>
-                </div>
-                <div class="mkt-trade-field mkt-limit-field" id="mkt-limit-field" style="display:none">
-                  <label class="mkt-field-label">Limit Price (¢)</label>
-                  <input type="number" id="mkt-limit-price" class="mkt-amount-input" placeholder="0.00" min="1" max="99" step="0.1"/>
+                  <div class="mkt-amount-quick-row">
+                    <button class="mkt-quick-amt" data-add="10">+$10</button>
+                    <button class="mkt-quick-amt" data-add="50">+$50</button>
+                    <button class="mkt-quick-amt" data-add="50p">+50%</button>
+                    <button class="mkt-quick-amt" data-add="100p">+100%</button>
+                  </div>
                 </div>
                 <div class="mkt-trade-info-row">
+                  <div class="mkt-tinfo"><span>Available to trade</span><span id="mkt-available">$0.00</span></div>
                   <div class="mkt-tinfo"><span>Avg Price</span><span id="mkt-avg-price">—</span></div>
                   <div class="mkt-tinfo"><span>Shares</span><span id="mkt-shares">—</span></div>
                   <div class="mkt-tinfo"><span>Potential Return</span><span id="mkt-return" class="green">—</span></div>

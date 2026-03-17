@@ -2718,6 +2718,29 @@ function renderMarketDetail(market) {
   if (mktOrderType === "limit" && limitPriceInput && !limitPriceInput.value) {
     limitPriceInput.value = Math.round(selOutcome.price * 100);
   }
+  // Mid / Best Ask / Best Bid（從 order book 取值）
+  const bestAsk = market.orderBook?.asks?.length ? Math.min(...market.orderBook.asks.map(a => a.price)) : selOutcome.price;
+  const bestBid = market.orderBook?.bids?.length ? Math.max(...market.orderBook.bids.map(b => b.price)) : selOutcome.price;
+  const midPrice = ((bestAsk + bestBid) / 2) * 100;
+  document.querySelectorAll(".mkt-quick-price").forEach(btn => {
+    btn.onclick = () => {
+      const v = btn.dataset.fill === "mid" ? midPrice : btn.dataset.fill === "ask" ? bestAsk * 100 : bestBid * 100;
+      if (limitPriceInput) { limitPriceInput.value = v.toFixed(1); limitPriceInput.dispatchEvent(new Event("input")); }
+    };
+  });
+  // +$10 / +$50 / +50% / +100%
+  document.querySelectorAll(".mkt-quick-amt").forEach(btn => {
+    btn.onclick = () => {
+      const cur = parseFloat(amtInput?.value || 0);
+      const add = btn.dataset.add;
+      let newVal = cur;
+      if (add === "10") newVal = cur + 10;
+      else if (add === "50") newVal = cur + 50;
+      else if (add === "50p") newVal = cur + cur * 0.5;
+      else if (add === "100p") newVal = cur + cur;
+      if (amtInput) { amtInput.value = Math.max(0, newVal).toFixed(2); amtInput.dispatchEvent(new Event("input")); }
+    };
+  });
   const confirmBtn = document.getElementById("mkt-confirm-btn");
   const amtInput   = document.getElementById("mkt-amount");
   const effPrice = mktOrderType === "limit" && limitPriceInput?.value
