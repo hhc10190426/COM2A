@@ -2913,13 +2913,48 @@ function renderMarketDetail(market) {
   ).join("");
 }
 
+/** 產生與當前價格相符的 order book 與 recent trades（二元市場） */
+function buildBinaryMarketData(yesPrice) {
+  const p = Math.max(0.05, Math.min(0.95, yesPrice));
+  const spread = 0.005;
+  return {
+    orderBook: {
+      asks: [
+        { price: +(p + spread * 2).toFixed(3), size: 1800 },
+        { price: +(p + spread * 1.5).toFixed(3), size: 3400 },
+        { price: +(p + spread).toFixed(3), size: 5100 },
+        { price: +(p + spread * 0.5).toFixed(3), size: 4200 },
+        { price: +(p + 0.002).toFixed(3), size: 3600 },
+      ],
+      bids: [
+        { price: +(p - 0.002).toFixed(3), size: 5200 },
+        { price: +(p - spread * 0.5).toFixed(3), size: 7800 },
+        { price: +(p - spread).toFixed(3), size: 9300 },
+        { price: +(p - spread * 1.5).toFixed(3), size: 12100 },
+        { price: +(p - spread * 2).toFixed(3), size: 6400 },
+      ],
+    },
+    recentTrades: [
+      { side: "buy", outcome: "Yes", amount: 500, price: p, time: "1m ago" },
+      { side: "buy", outcome: "Yes", amount: 1200, price: +(p - 0.001).toFixed(3), time: "3m ago" },
+      { side: "sell", outcome: "No", amount: 300, price: +(1 - p).toFixed(3), time: "5m ago" },
+      { side: "buy", outcome: "Yes", amount: 750, price: +(p - 0.002).toFixed(3), time: "8m ago" },
+    ],
+  };
+}
+
 /** 顯示市場詳情頁（傳入 event 物件，若無則用 mock） */
 function showMarketDetail(ev) {
   prevView = currentView || "events";
   let market = MOCK_MARKET;
+  const isFedMarket = (id) => String(id || "").includes("fed") || id === MOCK_MARKET.id;
+
   if (ev) {
     const m = ev.markets?.[0] || ev;
     const prices = parseOutcomePrices(m.outcomePrices);
+    const yesPrice = prices[0] ?? 0.5;
+    const binaryData = buildBinaryMarketData(yesPrice);
+
     market = {
       ...MOCK_MARKET,
       id    : String(ev.id || m.id || ""),
@@ -2936,7 +2971,18 @@ function showMarketDetail(ev) {
       outcomes : prices.length >= 2
         ? [{ label:"Yes", price:prices[0], color:"#22c55e" }, { label:"No", price:prices[1], color:"#ef4444" }]
         : MOCK_MARKET.outcomes,
+      orderBook   : isFedMarket(ev.id) ? MOCK_MARKET.orderBook : binaryData.orderBook,
+      recentTrades: isFedMarket(ev.id) ? MOCK_MARKET.recentTrades : binaryData.recentTrades,
+      description : isFedMarket(ev.id)
+        ? MOCK_MARKET.description
+        : "This market resolves YES if the event occurs, NO otherwise. Resolution is determined by the market operator based on verifiable outcomes.",
     };
+
+    if (!isFedMarket(ev.id)) {
+      delete market.chartOutcomes;
+      delete market.multiOutcomePriceHistory;
+      market.priceHistory = genMockPriceHistory(90, Math.max(0.1, yesPrice - 0.15), yesPrice);
+    }
   }
   mktSelectedOutcome = "yes";
   mktChartRange      = "1M";
