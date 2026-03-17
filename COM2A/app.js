@@ -2391,6 +2391,41 @@ function renderPortfolioView() {
   // P&L Calendar 預設收起，點擊才展開
 }
 
+// ===== 登入 Modal =====
+function initLoginModal() {
+  const overlay  = document.getElementById("login-modal");
+  const openBtn  = document.getElementById("btn-login");
+  const closeBtn = document.getElementById("login-close");
+  const googleBtn = document.getElementById("btn-google-login");
+  const xBtn     = document.getElementById("btn-x-login");
+
+  const openModal  = () => { if (overlay) overlay.style.display = "flex"; };
+  const closeModal = () => { if (overlay) overlay.style.display = "none"; };
+
+  openBtn?.addEventListener("click", openModal);
+  closeBtn?.addEventListener("click", closeModal);
+
+  // 點擊背景關閉
+  overlay?.addEventListener("click", (e) => {
+    if (e.target === overlay) closeModal();
+  });
+
+  // ESC 關閉
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && overlay?.style.display === "flex") closeModal();
+  });
+
+  // Google 登入 — 可替換為真實 OAuth URL
+  googleBtn?.addEventListener("click", () => {
+    alert("Google 登入功能即將推出！");
+  });
+
+  // X (Twitter) 登入 — 可替換為真實 OAuth URL
+  xBtn?.addEventListener("click", () => {
+    alert("X 登入功能即將推出！");
+  });
+}
+
 // ===== 初始化 =====
 document.addEventListener("DOMContentLoaded", () => {
   renderNews(NEWS_DATA);
@@ -2404,6 +2439,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initSportsFilters();
   initCryptoFilters();
   initScrollableTabs("category-tabs");
+  initLoginModal();
   // sports-league-tabs / crypto-asset-tabs 是垂直側欄，不需要滾動箭頭
   loadAll();              // 唯一 Events fetch 入口
 });
