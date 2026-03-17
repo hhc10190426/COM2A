@@ -102,6 +102,13 @@ function fmtPct(val) {
   return (parseFloat(val) * 100).toFixed(0);
 }
 
+function fmtNum(val) {
+  const n = parseFloat(val) || 0;
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+  if (n >= 1_000)     return (n / 1_000).toFixed(1) + "K";
+  return n.toFixed(0);
+}
+
 function timeAgo(ts) {
   const diff = Date.now() - (ts * 1000 || ts);
   const s = Math.floor(diff / 1000);
@@ -234,9 +241,9 @@ function renderMarkets(events) {
   events.forEach((ev) => {
     const card = document.createElement("div");
     card.className = "market-card";
-    // 防止 grid item 被內容撐開
     card.style.minWidth = "0";
     card.style.overflow = "hidden";
+    card.style.cursor   = "pointer";
     const markets = ev.markets || [];
 
     if (markets.length > 1) {
@@ -245,6 +252,12 @@ function renderMarkets(events) {
       const m = markets[0] || ev;
       renderBinaryCard(card, m, ev);
     }
+
+    // 點擊卡片進入詳情（避開 watchlist 按鈕）
+    card.addEventListener("click", (e) => {
+      if (e.target.closest(".watchlist-toggle, .btn-bookmark, [data-wl]")) return;
+      showMarketDetail(ev);
+    });
 
     container.appendChild(card);
   });
@@ -1836,10 +1849,11 @@ let sportsLoaded = false;
 let portfolioLoaded = false;
 let cryptoLoaded = false;
 let intelLoaded = false;
+let prevView    = "events"; // 市場詳情頁返回用
 
 function switchView(view) {
   currentView = view;
-  ["view-events", "view-sports", "view-portfolio", "view-crypto", "view-intel"].forEach((id) =>
+  ["view-events", "view-sports", "view-portfolio", "view-crypto", "view-intel", "view-market-detail"].forEach((id) =>
     document.getElementById(id)?.style.setProperty("display", "none")
   );
   ["nav-events", "nav-sports", "nav-crypto", "nav-intel", "btn-watchlist-nav"].forEach((id) =>
@@ -1873,6 +1887,12 @@ function switchView(view) {
     document.getElementById("view-intel")?.style.setProperty("display", "block");
     document.getElementById("nav-intel")?.classList.add("active");
     if (!intelLoaded) { intelLoaded = true; loadIntelView(); }
+  } else if (view === "market-detail") {
+    document.getElementById("view-market-detail")?.style.setProperty("display", "block");
+    const grid    = document.querySelector(".content-grid");
+    const sidebar = document.querySelector(".sidebar");
+    grid?.classList.add("portfolio-mode");
+    if (sidebar) sidebar.style.display = "none";
   } else {
     document.getElementById("view-events")?.style.setProperty("display", "block");
     document.getElementById("nav-events")?.classList.add("active");
@@ -2389,6 +2409,298 @@ function renderPortfolioView() {
   renderEquityChart();
   renderPositionsTable();
   // P&L Calendar 預設收起，點擊才展開
+}
+
+// ===== Market Detail View =====
+
+/** 產生 30 天模擬價格走勢（隨機漫步） */
+function genMockPriceHistory(days = 90, startPrice = 0.50, endPrice = 0.72) {
+  const pts = [];
+  let p = startPrice;
+  const drift = (endPrice - startPrice) / days;
+  for (let i = 0; i < days; i++) {
+    p += drift + (Math.random() - 0.48) * 0.025;
+    p = Math.max(0.02, Math.min(0.98, p));
+    const d = new Date(Date.now() - (days - i) * 86400000);
+    pts.push({ t: d, yes: +p.toFixed(3), no: +(1 - p).toFixed(3) });
+  }
+  return pts;
+}
+
+const MOCK_MARKET = {
+  id: "fed-rate-cut-march-2026",
+  title: "Will the Fed cut interest rates at the March 2026 FOMC meeting?",
+  description: "This market will resolve YES if the Federal Open Market Committee (FOMC) announces a reduction in the federal funds rate target range at its scheduled March 18-19, 2026 meeting. It resolves NO if rates are held steady or raised.",
+  category: "Economics",
+  subcategory: "US Federal Reserve",
+  image: "https://polymarket-upload.s3.us-east-2.amazonaws.com/will-the-fed-cut-rates-in-march-2026.png",
+  volume24h: 284500,
+  liquidity: 182500,
+  totalVolume: 2420000,
+  endDate: "Mar 19, 2026",
+  source: "Polymarket",
+  outcomes: [
+    { label: "Yes", price: 0.72, color: "#22c55e" },
+    { label: "No",  price: 0.28, color: "#ef4444" },
+  ],
+  priceHistory: genMockPriceHistory(90, 0.45, 0.72),
+  orderBook: {
+    asks: [
+      { price: 0.750, size: 14200 },
+      { price: 0.740, size: 8600 },
+      { price: 0.730, size: 5100 },
+      { price: 0.725, size: 3400 },
+      { price: 0.722, size: 1800 },
+    ],
+    bids: [
+      { price: 0.720, size: 5200 },
+      { price: 0.715, size: 7800 },
+      { price: 0.710, size: 9300 },
+      { price: 0.700, size: 12100 },
+      { price: 0.690, size: 6400 },
+    ],
+  },
+  recentTrades: [
+    { side: "buy",  outcome: "Yes", amount: 500,  price: 0.720, time: "1m ago"  },
+    { side: "buy",  outcome: "Yes", amount: 1200, price: 0.719, time: "3m ago"  },
+    { side: "sell", outcome: "No",  amount: 300,  price: 0.282, time: "5m ago"  },
+    { side: "buy",  outcome: "Yes", amount: 750,  price: 0.718, time: "8m ago"  },
+    { side: "sell", outcome: "Yes", amount: 200,  price: 0.721, time: "11m ago" },
+    { side: "buy",  outcome: "No",  amount: 400,  price: 0.280, time: "14m ago" },
+    { side: "buy",  outcome: "Yes", amount: 2000, price: 0.715, time: "18m ago" },
+    { side: "sell", outcome: "No",  amount: 150,  price: 0.285, time: "22m ago" },
+  ],
+};
+
+let mktSelectedOutcome = "yes";
+let mktChartRange      = "1M";
+
+/** 以 SVG 繪製市場價格走勢圖 */
+function renderMktChart(market) {
+  const wrap = document.getElementById("mkt-chart-wrap");
+  if (!wrap) return;
+
+  const RANGES = { "1D": 1, "1W": 7, "1M": 30, "All": 999 };
+  const days   = RANGES[mktChartRange] ?? 30;
+  const data   = market.priceHistory.slice(-days);
+  if (!data.length) return;
+
+  const W = 600, H = 180;
+  const P = { t: 14, r: 8, b: 28, l: 40 };
+  const CW = W - P.l - P.r, CH = H - P.t - P.b;
+
+  const yVals = data.map(d => d.yes);
+  const minY  = Math.min(...yVals) - 0.02;
+  const maxY  = Math.max(...yVals) + 0.02;
+  const yR    = maxY - minY || 0.01;
+
+  const xS = (i) => P.l + (i / (data.length - 1)) * CW;
+  const yS = (v) => P.t + (1 - (v - minY) / yR) * CH;
+
+  const isUp  = yVals.at(-1) >= yVals[0];
+  const color = isUp ? "#22c55e" : "#ef4444";
+  const fade  = isUp ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)";
+
+  const linePts = data.map((d, i) => `${xS(i).toFixed(1)},${yS(d.yes).toFixed(1)}`).join(" ");
+  const areaClose = ` ${xS(data.length-1).toFixed(1)},${H-P.b} ${P.l},${H-P.b}`;
+
+  // Y ticks
+  const yTicks = [0,1,2,3].map(i => {
+    const v = minY + (yR * i / 3);
+    return `<text x="${P.l-6}" y="${(yS(v)+4).toFixed(1)}" text-anchor="end" fill="#5a5a78" font-size="10">${Math.round(v*100)}¢</text>
+            <line x1="${P.l}" y1="${yS(v).toFixed(1)}" x2="${W-P.r}" y2="${yS(v).toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
+  }).join("");
+
+  // X ticks (4 evenly spaced)
+  const xIdxs = [0, Math.floor(data.length/3), Math.floor(data.length*2/3), data.length-1];
+  const xTicks = xIdxs.map(i => {
+    const d = data[i];
+    const label = d.t instanceof Date
+      ? d.t.toLocaleDateString("en-US", { month:"short", day:"numeric" })
+      : "";
+    return `<text x="${xS(i).toFixed(1)}" y="${H-P.b+14}" text-anchor="middle" fill="#5a5a78" font-size="10">${label}</text>`;
+  }).join("");
+
+  // Current price marker
+  const lastX = xS(data.length-1).toFixed(1);
+  const lastY = yS(yVals.at(-1)).toFixed(1);
+  const lastPct = Math.round(yVals.at(-1) * 100);
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="mktGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
+        <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    ${yTicks}${xTicks}
+    <polyline fill="url(#mktGrad)" stroke="none" points="${linePts} ${areaClose}"/>
+    <polyline fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" points="${linePts}"/>
+    <circle cx="${lastX}" cy="${lastY}" r="4" fill="${color}" stroke="#16161e" stroke-width="2"/>
+    <text x="${parseFloat(lastX)+8}" y="${parseFloat(lastY)+4}" fill="${color}" font-size="11" font-weight="700">${lastPct}¢</text>
+  </svg>`;
+}
+
+/** 渲染市場詳情頁 */
+function renderMarketDetail(market) {
+  // 標題
+  const icon = document.getElementById("mkt-icon");
+  if (icon) { icon.src = market.image || ""; icon.style.display = market.image ? "" : "none"; }
+  const tagsEl = document.getElementById("mkt-tags");
+  if (tagsEl) tagsEl.innerHTML = [market.category, market.subcategory].filter(Boolean).map(t => `<span class="mkt-tag">${t}</span>`).join("");
+  const titleEl = document.getElementById("mkt-title");
+  if (titleEl) titleEl.textContent = market.title;
+  document.getElementById("mkt-breadcrumb")?.setAttribute("data-prev", "events");
+
+  // Stats bar
+  document.getElementById("mkt-vol")?.setAttribute  && (document.getElementById("mkt-vol").textContent  = fmtUSD(market.volume24h));
+  document.getElementById("mkt-liq").textContent  = fmtUSD(market.liquidity);
+  document.getElementById("mkt-tvol").textContent = fmtUSD(market.totalVolume);
+  document.getElementById("mkt-exp").textContent  = market.endDate;
+  document.getElementById("mkt-src").textContent  = market.source;
+
+  // Outcome cards
+  const outWrap = document.getElementById("mkt-outcomes");
+  if (outWrap) {
+    outWrap.innerHTML = market.outcomes.map((o, i) => {
+      const pct   = Math.round(o.price * 100);
+      const cls   = i === 0 ? "yes" : "no";
+      const active = (cls === "yes" && mktSelectedOutcome === "yes") ? "active-yes" : (cls === "no" && mktSelectedOutcome === "no") ? "active-no" : "";
+      return `<div class="mkt-outcome-card ${active}" data-outcome="${cls}">
+        <div class="mkt-oc-label">${o.label}</div>
+        <div class="mkt-oc-pct ${cls}">${pct}%</div>
+        <div class="mkt-oc-price">${(o.price).toFixed(3)} USDC</div>
+        <div class="mkt-oc-bar" style="background:${o.color};opacity:${0.3 + o.price * 0.5}"></div>
+      </div>`;
+    }).join("");
+    outWrap.querySelectorAll(".mkt-outcome-card").forEach(card => {
+      card.addEventListener("click", () => {
+        mktSelectedOutcome = card.dataset.outcome;
+        renderMarketDetail(market);
+      });
+    });
+  }
+
+  // Outcome toggle in trade panel
+  const ocRow = document.getElementById("mkt-oc-row");
+  if (ocRow) {
+    ocRow.innerHTML = market.outcomes.map((o, i) => {
+      const cls = i === 0 ? "yes" : "no";
+      const sel = mktSelectedOutcome === cls ? `sel-${cls}` : "";
+      return `<button class="mkt-oc-btn ${sel}" data-oc="${cls}">${o.label} ${Math.round(o.price*100)}¢</button>`;
+    }).join("");
+    ocRow.querySelectorAll(".mkt-oc-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        mktSelectedOutcome = btn.dataset.oc;
+        renderMarketDetail(market);
+      });
+    });
+  }
+
+  // Avg price / confirm button
+  const selOutcome = market.outcomes[mktSelectedOutcome === "yes" ? 0 : 1];
+  document.getElementById("mkt-avg-price").textContent = `${(selOutcome.price).toFixed(3)} USDC`;
+  const confirmBtn = document.getElementById("mkt-confirm-btn");
+  if (confirmBtn) {
+    confirmBtn.textContent = `Buy ${selOutcome.label}`;
+    confirmBtn.className   = `mkt-confirm-btn${mktSelectedOutcome === "no" ? " no-mode" : ""}`;
+  }
+  // Potential return from amount input
+  const amtInput = document.getElementById("mkt-amount");
+  const calcReturn = () => {
+    const amt     = parseFloat(amtInput?.value || 0);
+    const shares  = amt > 0 ? (amt / selOutcome.price).toFixed(2) : "—";
+    const ret     = amt > 0 ? `$${(amt / selOutcome.price).toFixed(2)} (+${((1/selOutcome.price - 1)*100).toFixed(0)}%)` : "—";
+    document.getElementById("mkt-shares").textContent = shares;
+    const retEl = document.getElementById("mkt-return");
+    if (retEl) { retEl.textContent = ret; retEl.className = mktSelectedOutcome === "no" ? "" : "green"; }
+  };
+  calcReturn();
+  amtInput?.removeEventListener("input", calcReturn);
+  amtInput?.addEventListener("input", calcReturn);
+
+  // Resolution
+  document.getElementById("mkt-resolution").textContent = market.description;
+
+  // Chart
+  renderMktChart(market);
+  document.getElementById("mkt-chart-range")?.querySelectorAll(".mkt-rng-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.r === mktChartRange);
+    btn.onclick = () => { mktChartRange = btn.dataset.r; renderMktChart(market); document.getElementById("mkt-chart-range").querySelectorAll(".mkt-rng-btn").forEach(b => b.classList.toggle("active", b.dataset.r === mktChartRange)); };
+  });
+
+  // Order book
+  const maxAsk = Math.max(...market.orderBook.asks.map(a => a.size));
+  const maxBid = Math.max(...market.orderBook.bids.map(b => b.size));
+  const asksEl = document.getElementById("mkt-asks");
+  const bidsEl = document.getElementById("mkt-bids");
+  if (asksEl) asksEl.innerHTML = [...market.orderBook.asks].reverse().map(a => {
+    const pct = Math.round((a.size / maxAsk) * 100);
+    return `<div class="mkt-ob-row"><div class="ob-price" style="color:#f87171">${a.price.toFixed(3)}</div><div class="ob-size">${fmtNum(a.size)}</div><div class="mkt-ob-fill ask-fill" style="width:${pct}%"></div></div>`;
+  }).join("");
+  if (bidsEl) bidsEl.innerHTML = market.orderBook.bids.map(b => {
+    const pct = Math.round((b.size / maxBid) * 100);
+    return `<div class="mkt-ob-row"><div class="ob-price" style="color:#4ade80">${b.price.toFixed(3)}</div><div class="ob-size">${fmtNum(b.size)}</div><div class="mkt-ob-fill bid-fill" style="width:${pct}%"></div></div>`;
+  }).join("");
+
+  // Recent trades
+  const tradesEl = document.getElementById("mkt-recent-trades");
+  if (tradesEl) tradesEl.innerHTML = market.recentTrades.map(t =>
+    `<div class="mkt-trade-row">
+      <span class="mkt-tr-side ${t.side}">${t.side}</span>
+      <span class="mkt-tr-outcome">${t.outcome}</span>
+      <span class="mkt-tr-amount">$${fmtNum(t.amount)}</span>
+      <span class="mkt-tr-price">${t.price.toFixed(3)}</span>
+      <span class="mkt-tr-time">${t.time}</span>
+    </div>`
+  ).join("");
+}
+
+/** 顯示市場詳情頁（傳入 event 物件，若無則用 mock） */
+function showMarketDetail(ev) {
+  prevView = currentView || "events";
+  let market = MOCK_MARKET;
+  if (ev) {
+    const m = ev.markets?.[0] || ev;
+    const prices = parseOutcomePrices(m.outcomePrices);
+    market = {
+      ...MOCK_MARKET,
+      id    : String(ev.id || m.id || ""),
+      title : ev.title || m.question || MOCK_MARKET.title,
+      image : ev.image || m.image || MOCK_MARKET.image,
+      category    : ev.category || "Markets",
+      subcategory : m.groupItemTitle || "",
+      volume24h   : parseFloat(ev.volume24hr || m.volume24hr || 0) || MOCK_MARKET.volume24h,
+      liquidity   : parseFloat(ev.liquidity  || m.liquidity  || 0) || MOCK_MARKET.liquidity,
+      totalVolume : parseFloat(ev.volume     || m.volume     || 0) || MOCK_MARKET.totalVolume,
+      endDate     : ev.endDate || m.endDate
+        ? new Date(ev.endDate || m.endDate).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })
+        : MOCK_MARKET.endDate,
+      outcomes : prices.length >= 2
+        ? [{ label:"Yes", price:prices[0], color:"#22c55e" }, { label:"No", price:prices[1], color:"#ef4444" }]
+        : MOCK_MARKET.outcomes,
+    };
+  }
+  mktSelectedOutcome = "yes";
+  mktChartRange      = "1M";
+  switchView("market-detail");
+  renderMarketDetail(market);
+
+  document.getElementById("mkt-back-btn")?.addEventListener("click", () => switchView(prevView), { once: true });
+}
+
+/** 為事件卡片加上點擊進入詳情 */
+function bindMarketCardClicks() {
+  document.querySelectorAll(".market-card").forEach(card => {
+    if (card.dataset.detailBound) return;
+    card.dataset.detailBound = "1";
+    card.style.cursor = "pointer";
+    card.addEventListener("click", (e) => {
+      // 避免點到 bookmark / watchlist 按鈕時也觸發
+      if ((e.target).closest(".btn-watchlist-card, .btn-bookmark, .watchlist-toggle")) return;
+      showMarketDetail(null);
+    });
+  });
 }
 
 // ===== 登入 Modal =====

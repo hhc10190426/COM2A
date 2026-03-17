@@ -550,6 +550,219 @@
       margin-top: 4px;
     }
 
+    /* ══ Market Detail View ══ */
+    .mkt-topbar {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+    }
+    .mkt-back-btn {
+      display: flex; align-items: center; gap: 5px;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      color: var(--text-secondary); font-size: 13px; font-weight: 600;
+      padding: 6px 14px; border-radius: 8px; cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .mkt-back-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+    .mkt-breadcrumb { font-size: 12px; color: var(--text-muted); }
+
+    .mkt-title-row {
+      display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px;
+    }
+    .mkt-icon {
+      width: 52px; height: 52px; border-radius: 12px;
+      object-fit: cover; flex-shrink: 0; background: var(--bg-card);
+      border: 1px solid var(--border);
+    }
+    .mkt-title-info { flex: 1; min-width: 0; }
+    .mkt-tags { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+    .mkt-tag {
+      padding: 2px 9px; border-radius: 5px; font-size: 11px; font-weight: 600;
+      background: rgba(99,102,241,0.12); color: var(--accent); border: 1px solid rgba(99,102,241,0.2);
+    }
+    .mkt-title {
+      font-size: 20px; font-weight: 700; color: var(--text-primary);
+      line-height: 1.35; margin: 0;
+    }
+
+    .mkt-stats-bar {
+      display: flex; gap: 0; margin-bottom: 20px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+    }
+    .mkt-stat {
+      flex: 1; padding: 12px 16px;
+      border-right: 1px solid var(--border);
+    }
+    .mkt-stat:last-child { border-right: none; }
+    .mkt-stat-label { display: block; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .mkt-stat-val   { display: block; font-size: 15px; font-weight: 700; color: var(--text-primary); }
+
+    .mkt-detail-grid {
+      display: grid; grid-template-columns: 400px 1fr; gap: 16px;
+    }
+
+    /* Left col */
+    .mkt-left-col { display: flex; flex-direction: column; gap: 12px; }
+
+    .mkt-outcomes-wrap { display: flex; gap: 10px; }
+    .mkt-outcome-card {
+      flex: 1; padding: 16px; border-radius: 12px;
+      border: 2px solid var(--border); background: var(--bg-card);
+      cursor: pointer; transition: border-color 0.15s, background 0.15s;
+      text-align: center;
+    }
+    .mkt-outcome-card.active-yes { border-color: #22c55e; background: rgba(34,197,94,0.07); }
+    .mkt-outcome-card.active-no  { border-color: #ef4444; background: rgba(239,68,68,0.07); }
+    .mkt-oc-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+    .mkt-oc-pct   { font-size: 26px; font-weight: 800; }
+    .mkt-oc-pct.yes { color: #22c55e; }
+    .mkt-oc-pct.no  { color: #ef4444; }
+    .mkt-oc-price { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+    .mkt-oc-bar   { height: 4px; border-radius: 2px; margin-top: 10px; }
+
+    .mkt-trade-panel {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px;
+    }
+    .mkt-trade-tabs {
+      display: flex; background: rgba(255,255,255,0.04);
+      border-radius: 8px; padding: 3px; gap: 2px;
+    }
+    .mkt-ttab {
+      flex: 1; padding: 7px; border-radius: 6px; border: none;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      background: none; color: var(--text-muted); transition: background 0.15s, color 0.15s;
+    }
+    .mkt-ttab.active { background: var(--bg-secondary,#1e1e2e); color: var(--text-primary); }
+
+    .mkt-oc-row { display: flex; gap: 6px; }
+    .mkt-oc-btn {
+      flex: 1; padding: 8px; border-radius: 8px; border: 1.5px solid var(--border);
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      background: rgba(255,255,255,0.04); color: var(--text-muted);
+      transition: all 0.15s;
+    }
+    .mkt-oc-btn.sel-yes { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #22c55e; }
+    .mkt-oc-btn.sel-no  { border-color: #ef4444; background: rgba(239,68,68,0.1);  color: #ef4444; }
+
+    .mkt-field-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; display: block; }
+    .mkt-amount-wrap { display: flex; gap: 6px; }
+    .mkt-amount-input {
+      flex: 1; padding: 9px 12px; border-radius: 8px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      color: var(--text-primary); font-size: 14px; outline: none;
+      transition: border-color 0.15s;
+    }
+    .mkt-amount-input:focus { border-color: var(--accent); }
+    .mkt-max-btn {
+      padding: 9px 14px; border-radius: 8px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05); color: var(--text-muted);
+      font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.15s;
+    }
+    .mkt-max-btn:hover { background: rgba(255,255,255,0.1); }
+
+    .mkt-trade-info-row {
+      display: flex; flex-direction: column; gap: 6px;
+      background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px 12px;
+    }
+    .mkt-tinfo {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; color: var(--text-muted);
+    }
+    .mkt-tinfo span:last-child { font-weight: 600; color: var(--text-primary); }
+    .mkt-tinfo span:last-child.green { color: #22c55e; }
+
+    .mkt-confirm-btn {
+      width: 100%; padding: 12px; border-radius: 9px; border: none;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      background: #22c55e; color: #000;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .mkt-confirm-btn:hover { background: #16a34a; }
+    .mkt-confirm-btn.no-mode { background: #ef4444; }
+    .mkt-confirm-btn.no-mode:hover { background: #dc2626; }
+    .mkt-confirm-btn:active { transform: scale(0.98); }
+
+    .mkt-resolution-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px;
+    }
+    .mkt-res-hdr {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 700; color: var(--text-secondary);
+      margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .mkt-res-body { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 0; }
+
+    /* Right col */
+    .mkt-right-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+    .mkt-chart-card, .mkt-ob-card, .mkt-recent-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px;
+    }
+    .mkt-chart-hdr {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+    }
+    .mkt-chart-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+    .mkt-chart-range { display: flex; gap: 3px; }
+    .mkt-rng-btn {
+      padding: 4px 10px; border-radius: 6px; border: none;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      background: none; color: var(--text-muted); transition: background 0.15s, color 0.15s;
+    }
+    .mkt-rng-btn.active { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+    .mkt-chart-wrap { width: 100%; }
+    .mkt-chart-wrap svg { width: 100%; display: block; }
+
+    .mkt-ob-hdr {
+      font-size: 13px; font-weight: 700; color: var(--text-primary);
+      margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+    }
+    .mkt-ob-badge {
+      font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+      background: rgba(34,197,94,0.12); color: #22c55e;
+    }
+    .mkt-ob-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .mkt-ob-col-hdr {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; padding-bottom: 6px; margin-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .asks-hdr { color: #f87171; }
+    .bids-hdr { color: #4ade80; }
+    .mkt-ob-row {
+      display: flex; justify-content: space-between;
+      font-size: 12px; padding: 3px 0; position: relative;
+    }
+    .mkt-ob-row .ob-price { font-weight: 600; z-index: 1; }
+    .mkt-ob-row .ob-size  { color: var(--text-muted); z-index: 1; }
+    .mkt-ob-fill {
+      position: absolute; top: 0; bottom: 0; border-radius: 2px;
+    }
+    .ask-fill { right: 0; background: rgba(239,68,68,0.08); }
+    .bid-fill { left: 0;  background: rgba(34,197,94,0.08); }
+
+    .mkt-trade-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px;
+    }
+    .mkt-trade-row:last-child { border-bottom: none; }
+    .mkt-tr-side {
+      padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; flex-shrink: 0;
+    }
+    .mkt-tr-side.buy  { background: rgba(34,197,94,0.12); color: #4ade80; }
+    .mkt-tr-side.sell { background: rgba(239,68,68,0.12); color: #f87171; }
+    .mkt-tr-outcome { flex: 1; color: var(--text-secondary); font-weight: 500; }
+    .mkt-tr-amount  { font-weight: 600; color: var(--text-primary); }
+    .mkt-tr-price   { color: var(--text-muted); width: 44px; text-align: right; }
+    .mkt-tr-time    { color: var(--text-muted); font-size: 11px; white-space: nowrap; }
+
+    @media (max-width: 900px) {
+      .mkt-detail-grid { grid-template-columns: 1fr; }
+      .mkt-stats-bar { flex-wrap: wrap; }
+      .mkt-stat { min-width: 45%; }
+    }
+
     /* Globe.gl tooltip 覆寫 */
     .scene-tooltip {
       background: #1a1a24 !important; border: 1px solid #2a2a38 !important;
@@ -1229,6 +1442,120 @@
         </div>
 
       </div>
+
+        <!-- ══ MARKET DETAIL 視圖 ══ -->
+        <div id="view-market-detail" style="display:none">
+
+          <!-- 頂部導覽 -->
+          <div class="mkt-topbar">
+            <button class="mkt-back-btn" id="mkt-back-btn">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+              Back
+            </button>
+            <span class="mkt-breadcrumb" id="mkt-breadcrumb">Markets</span>
+          </div>
+
+          <!-- 標題列 -->
+          <div class="mkt-title-row">
+            <img class="mkt-icon" id="mkt-icon" src="" alt="" onerror="this.style.display='none'"/>
+            <div class="mkt-title-info">
+              <div class="mkt-tags" id="mkt-tags"></div>
+              <h1 class="mkt-title" id="mkt-title">—</h1>
+            </div>
+          </div>
+
+          <!-- 統計列 -->
+          <div class="mkt-stats-bar">
+            <div class="mkt-stat"><span class="mkt-stat-label">Volume (24h)</span><span class="mkt-stat-val" id="mkt-vol">—</span></div>
+            <div class="mkt-stat"><span class="mkt-stat-label">Liquidity</span><span class="mkt-stat-val" id="mkt-liq">—</span></div>
+            <div class="mkt-stat"><span class="mkt-stat-label">Total Volume</span><span class="mkt-stat-val" id="mkt-tvol">—</span></div>
+            <div class="mkt-stat"><span class="mkt-stat-label">Expires</span><span class="mkt-stat-val" id="mkt-exp">—</span></div>
+            <div class="mkt-stat"><span class="mkt-stat-label">Source</span><span class="mkt-stat-val" id="mkt-src">—</span></div>
+          </div>
+
+          <!-- 主內容雙欄 -->
+          <div class="mkt-detail-grid">
+
+            <!-- 左欄 -->
+            <div class="mkt-left-col">
+
+              <!-- 結果選項 -->
+              <div class="mkt-outcomes-wrap" id="mkt-outcomes"></div>
+
+              <!-- 交易面板 -->
+              <div class="mkt-trade-panel">
+                <div class="mkt-trade-tabs">
+                  <button class="mkt-ttab active" data-tab="buy">Buy</button>
+                  <button class="mkt-ttab" data-tab="sell">Sell</button>
+                </div>
+                <div class="mkt-oc-row" id="mkt-oc-row"></div>
+                <div class="mkt-trade-field">
+                  <label class="mkt-field-label">Amount (USDC)</label>
+                  <div class="mkt-amount-wrap">
+                    <input type="number" id="mkt-amount" class="mkt-amount-input" placeholder="0.00" min="0" step="1"/>
+                    <button class="mkt-max-btn">Max</button>
+                  </div>
+                </div>
+                <div class="mkt-trade-info-row">
+                  <div class="mkt-tinfo"><span>Avg Price</span><span id="mkt-avg-price">—</span></div>
+                  <div class="mkt-tinfo"><span>Shares</span><span id="mkt-shares">—</span></div>
+                  <div class="mkt-tinfo"><span>Potential Return</span><span id="mkt-return" class="green">—</span></div>
+                </div>
+                <button class="mkt-confirm-btn" id="mkt-confirm-btn">Buy Yes</button>
+              </div>
+
+              <!-- 解析條件 -->
+              <div class="mkt-resolution-card">
+                <div class="mkt-res-hdr">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  Resolution Criteria
+                </div>
+                <p class="mkt-res-body" id="mkt-resolution">—</p>
+              </div>
+
+            </div>
+
+            <!-- 右欄 -->
+            <div class="mkt-right-col">
+
+              <!-- 價格走勢圖 -->
+              <div class="mkt-chart-card">
+                <div class="mkt-chart-hdr">
+                  <span class="mkt-chart-title">Price History</span>
+                  <div class="mkt-chart-range" id="mkt-chart-range">
+                    <button class="mkt-rng-btn" data-r="1D">1D</button>
+                    <button class="mkt-rng-btn" data-r="1W">1W</button>
+                    <button class="mkt-rng-btn active" data-r="1M">1M</button>
+                    <button class="mkt-rng-btn" data-r="All">All</button>
+                  </div>
+                </div>
+                <div class="mkt-chart-wrap" id="mkt-chart-wrap"></div>
+              </div>
+
+              <!-- 掛單簿 -->
+              <div class="mkt-ob-card">
+                <div class="mkt-ob-hdr">Order Book <span class="mkt-ob-badge" id="mkt-ob-badge">Yes</span></div>
+                <div class="mkt-ob-grid">
+                  <div class="mkt-ob-col">
+                    <div class="mkt-ob-col-hdr asks-hdr">Ask (Sell)</div>
+                    <div id="mkt-asks"></div>
+                  </div>
+                  <div class="mkt-ob-col">
+                    <div class="mkt-ob-col-hdr bids-hdr">Bid (Buy)</div>
+                    <div id="mkt-bids"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 最近交易 -->
+              <div class="mkt-recent-card">
+                <div class="mkt-ob-hdr">Recent Trades</div>
+                <div id="mkt-recent-trades"></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
 
       <!-- 右側側邊欄 -->
       <aside class="sidebar">
