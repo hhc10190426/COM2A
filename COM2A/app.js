@@ -65,6 +65,21 @@ const I18N = {
     "common.global": "Global",
     "common.noTrades": "No recent trades.",
     "filter.sort": "Sort",
+    "cat.all": "All",
+    "cat.politics": "Politics",
+    "cat.crypto": "Crypto",
+    "cat.ai": "AI",
+    "cat.tech": "Tech",
+    "cat.sports": "Sports",
+    "cat.pop-culture": "Pop Culture",
+    "cat.middle-east": "Middle East",
+    "cat.iran": "Iran",
+    "cat.finance": "Finance",
+    "cat.geopolitics": "Geopolitics",
+    "cat.elections": "Elections",
+    "cat.economy": "Economy",
+    "cat.weather-science": "Weather & Science",
+    "cat.culture": "Culture",
   },
   zh: {
     "nav.events": "事件",
@@ -100,14 +115,29 @@ const I18N = {
     "common.global": "全球",
     "common.noTrades": "尚無最近交易。",
     "filter.sort": "排序",
+    "cat.all": "全部",
+    "cat.politics": "政治",
+    "cat.crypto": "加密貨幣",
+    "cat.ai": "AI",
+    "cat.tech": "科技",
+    "cat.sports": "體育",
+    "cat.pop-culture": "流行文化",
+    "cat.middle-east": "中東",
+    "cat.iran": "伊朗",
+    "cat.finance": "金融",
+    "cat.geopolitics": "地緣政治",
+    "cat.elections": "選舉",
+    "cat.economy": "經濟",
+    "cat.weather-science": "天氣與科學",
+    "cat.culture": "文化",
   },
   ja: {
     "nav.events": "イベント",
     "nav.crypto": "暗号資産",
     "nav.sports": "スポーツ",
     "nav.intel": "インテル",
-    "nav.watchlist": "ウォッチリスト",
-    "nav.portfolio": "ポートフォリオ",
+    "nav.watchlist": "ウォッチ",
+    "nav.portfolio": "ポート",
     "nav.logIn": "ログイン",
     "search.placeholder": "マーケットを検索...",
     "filter.volume24hr": "24h 出来高",
@@ -135,13 +165,28 @@ const I18N = {
     "common.global": "グローバル",
     "common.noTrades": "最近の取引はありません。",
     "filter.sort": "並び替え",
+    "cat.all": "すべて",
+    "cat.politics": "政治",
+    "cat.crypto": "暗号",
+    "cat.ai": "AI",
+    "cat.tech": "テック",
+    "cat.sports": "スポーツ",
+    "cat.pop-culture": "ポップカルチャー",
+    "cat.middle-east": "中東",
+    "cat.iran": "イラン",
+    "cat.finance": "金融",
+    "cat.geopolitics": "地政学",
+    "cat.elections": "選挙",
+    "cat.economy": "経済",
+    "cat.weather-science": "天気・科学",
+    "cat.culture": "文化",
   },
   ko: {
     "nav.events": "이벤트",
     "nav.crypto": "암호화폐",
     "nav.sports": "스포츠",
     "nav.intel": "인텔",
-    "nav.watchlist": "관심 목록",
+    "nav.watchlist": "관심",
     "nav.portfolio": "포트폴리오",
     "nav.logIn": "로그인",
     "search.placeholder": "마켓 검색...",
@@ -170,6 +215,21 @@ const I18N = {
     "common.global": "글로벌",
     "common.noTrades": "최근 거래가 없습니다.",
     "filter.sort": "정렬",
+    "cat.all": "전체",
+    "cat.politics": "정치",
+    "cat.crypto": "암호화폐",
+    "cat.ai": "AI",
+    "cat.tech": "테크",
+    "cat.sports": "스포츠",
+    "cat.pop-culture": "대중문화",
+    "cat.middle-east": "중동",
+    "cat.iran": "이란",
+    "cat.finance": "금융",
+    "cat.geopolitics": "지정학",
+    "cat.elections": "선거",
+    "cat.economy": "경제",
+    "cat.weather-science": "날씨·과학",
+    "cat.culture": "문화",
   },
 };
 
@@ -191,6 +251,7 @@ function setLang(lang) {
 }
 
 function refreshOnLangChange() {
+  buildTabs();
   const viewEvents = document.getElementById("view-events");
   const viewSports = document.getElementById("view-sports");
   const viewCrypto = document.getElementById("view-crypto");
@@ -218,9 +279,8 @@ function applyLang(lang) {
   });
   const langAttr = { en: "en", zh: "zh-TW", ja: "ja", ko: "ko" }[lang] || "en";
   document.documentElement.lang = langAttr;
-  document.querySelectorAll(".lang-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.getAttribute("data-lang") === lang);
-  });
+  const select = document.getElementById("lang-select");
+  if (select) select.value = lang;
 }
 
 // ===== 並行多 Proxy，用最快回應的 =====
@@ -858,21 +918,21 @@ function parseOutcomePrices(raw) {
 
 // ===== Polymarket 官方主分類（硬編碼，與 polymarket.com 一致）=====
 const POLYMARKET_CATEGORIES = [
-  { id: "all",             label: "All"                  },
-  { id: "politics",        label: "🏛 Politics"          },
-  { id: "crypto",          label: "₿ Crypto"             },
-  { id: "ai",              label: "🤖 AI"                },
-  { id: "tech",            label: "💻 Tech"              },
-  { id: "sports",          label: "🏆 Sports"            },
-  { id: "pop-culture",     label: "🎬 Pop Culture"       },
-  { id: "middle-east",     label: "🌍 Middle East"       },
-  { id: "iran",            label: "🇮🇷 Iran"             },
-  { id: "finance",         label: "💰 Finance"           },
-  { id: "geopolitics",     label: "🌐 Geopolitics"       },
-  { id: "elections",       label: "🗳 Elections"         },
-  { id: "economy",         label: "📈 Economy"           },
-  { id: "weather-science", label: "🌦 Weather & Science" },
-  { id: "culture",         label: "🎭 Culture"           },
+  { id: "all",             emoji: ""   },
+  { id: "politics",        emoji: "🏛 " },
+  { id: "crypto",          emoji: "₿ "  },
+  { id: "ai",              emoji: "🤖 " },
+  { id: "tech",            emoji: "💻 " },
+  { id: "sports",          emoji: "🏆 " },
+  { id: "pop-culture",     emoji: "🎬 " },
+  { id: "middle-east",     emoji: "🌍 " },
+  { id: "iran",            emoji: "🇮🇷 " },
+  { id: "finance",         emoji: "💰 " },
+  { id: "geopolitics",     emoji: "🌐 " },
+  { id: "elections",       emoji: "🗳 " },
+  { id: "economy",         emoji: "📈 " },
+  { id: "weather-science", emoji: "🌦 " },
+  { id: "culture",         emoji: "🎭 " },
 ];
 
 // ===== 建立分類 Tabs（使用 Polymarket 官方分類，無需 API 資料）=====
@@ -880,9 +940,10 @@ function buildTabs() {
   const container = document.getElementById("category-tabs");
   if (!container) return;
 
-  container.innerHTML = POLYMARKET_CATEGORIES.map((cat) =>
-    `<button class="tab${cat.id === "all" ? " active" : ""}" data-tag-id="${cat.id}">${cat.label}</button>`
-  ).join("");
+  container.innerHTML = POLYMARKET_CATEGORIES.map((cat) => {
+    const label = cat.emoji + (t("cat." + cat.id) || cat.id);
+    return `<button class="tab${cat.id === "all" ? " active" : ""}" data-tag-id="${cat.id}">${label}</button>`;
+  }).join("");
 
   container.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -3298,11 +3359,12 @@ function initLoginModal() {
 
 // ===== 語言切換初始化 =====
 function initLangSwitcher() {
+  const select = document.getElementById("lang-select");
+  if (select) {
+    select.value = getLang();
+    select.addEventListener("change", () => setLang(select.value));
+  }
   applyLang(getLang());
-  document.getElementById("lang-switcher")?.addEventListener("click", (e) => {
-    const btn = e.target.closest(".lang-btn");
-    if (btn) setLang(btn.getAttribute("data-lang"));
-  });
 }
 
 // ===== 初始化 =====
