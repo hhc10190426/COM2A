@@ -491,20 +491,101 @@
       content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.08);
     }
 
-    /* OAuth 按鈕 */
-    .login-btns { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
-    .login-provider-btn {
-      display: flex; align-items: center; justify-content: center; gap: 9px;
-      width: 100%; padding: 11px 16px; border-radius: 9px;
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
-      color: var(--text-primary);
-      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    /* ── Auth Orbs ── */
+    @keyframes orbFloat1 {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(-7px); }
     }
-    .login-provider-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.18); }
-    .login-provider-btn:active { transform: scale(0.98); }
-    .login-x-btn { background: #fff; border-color: #fff; color: #000; }
-    .login-x-btn:hover { background: #e8e8e8; border-color: #e8e8e8; }
+    @keyframes orbFloat2 {
+      0%, 100% { transform: translateY(-4px); }
+      50%       { transform: translateY(3px); }
+    }
+    @keyframes orbPulseGoogle {
+      0%, 100% { box-shadow: inset -5px -5px 10px rgba(0,0,0,0.18), inset 3px 3px 8px rgba(255,255,255,0.95), 0 0 22px rgba(66,133,244,0.5), 0 0 44px rgba(52,168,83,0.3), 0 12px 32px rgba(0,0,0,0.35); }
+      50%       { box-shadow: inset -5px -5px 10px rgba(0,0,0,0.18), inset 3px 3px 8px rgba(255,255,255,0.95), 0 0 32px rgba(234,67,53,0.5), 0 0 60px rgba(251,188,5,0.35), 0 12px 32px rgba(0,0,0,0.35); }
+    }
+    @keyframes orbPulseX {
+      0%, 100% { box-shadow: inset -5px -5px 10px rgba(0,0,0,0.6), inset 3px 3px 8px rgba(255,255,255,0.12), 0 0 28px rgba(255,255,255,0.45), 0 12px 32px rgba(0,0,0,0.5); }
+      50%       { box-shadow: inset -5px -5px 10px rgba(0,0,0,0.6), inset 3px 3px 8px rgba(255,255,255,0.12), 0 0 44px rgba(255,255,255,0.6), 0 12px 32px rgba(0,0,0,0.5); }
+    }
+
+    .auth-orbs {
+      display: flex; justify-content: center; gap: 40px;
+      padding: 12px 0 20px; margin-bottom: 4px;
+    }
+    .auth-orb {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      background: none; border: none; cursor: pointer; padding: 0;
+    }
+    .orb-surface {
+      width: 82px; height: 82px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    /* Reflection highlight */
+    .orb-surface::before {
+      content: ''; position: absolute;
+      top: 9px; left: 13px;
+      width: 30px; height: 18px; border-radius: 50%;
+      background: rgba(255,255,255,0.55);
+      filter: blur(4px); transform: rotate(-30deg);
+      pointer-events: none; z-index: 2;
+    }
+    /* Bottom shadow depth */
+    .orb-surface::after {
+      content: ''; position: absolute;
+      bottom: 6px; left: 50%; transform: translateX(-50%);
+      width: 50px; height: 12px; border-radius: 50%;
+      background: rgba(0,0,0,0.25); filter: blur(6px);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* Google orb */
+    .orb-google { animation: orbFloat1 3.2s ease-in-out infinite; }
+    .orb-google .orb-surface {
+      background: radial-gradient(circle at 36% 34%, #ffffff 0%, #e8e8e8 45%, #c4c4c4 100%);
+      box-shadow:
+        inset -5px -5px 10px rgba(0,0,0,0.15),
+        inset 3px 3px 8px rgba(255,255,255,0.95),
+        0 8px 28px rgba(0,0,0,0.3);
+    }
+    .orb-google:hover { animation-play-state: paused; }
+    .orb-google:hover .orb-surface {
+      transform: scale(1.18) translateY(-4px);
+      animation: orbPulseGoogle 1.4s ease-in-out infinite;
+    }
+    .orb-google:active .orb-surface { transform: scale(1.06) translateY(-1px); }
+    .orb-google .orb-surface::before { background: rgba(255,255,255,0.65); }
+
+    /* X orb */
+    .orb-x { animation: orbFloat2 3.8s ease-in-out infinite; }
+    .orb-x .orb-surface {
+      background: radial-gradient(circle at 36% 34%, #3d3d3d 0%, #1a1a1a 45%, #080808 100%);
+      box-shadow:
+        inset -5px -5px 10px rgba(0,0,0,0.55),
+        inset 3px 3px 8px rgba(255,255,255,0.1),
+        0 8px 28px rgba(0,0,0,0.45);
+    }
+    .orb-x:hover { animation-play-state: paused; }
+    .orb-x:hover .orb-surface {
+      transform: scale(1.18) translateY(-4px);
+      animation: orbPulseX 1.4s ease-in-out infinite;
+    }
+    .orb-x:active .orb-surface { transform: scale(1.06) translateY(-1px); }
+    .orb-x .orb-surface::before { background: rgba(255,255,255,0.18); }
+
+    /* Label */
+    .orb-label {
+      font-size: 11px; font-weight: 600; white-space: nowrap;
+      color: var(--text-muted); letter-spacing: 0.02em;
+      opacity: 0; transform: translateY(5px);
+      transition: opacity 0.22s ease, transform 0.22s ease, color 0.22s ease;
+      pointer-events: none;
+    }
+    .auth-orb:hover .orb-label {
+      opacity: 1; transform: translateY(0); color: var(--text-primary);
+    }
 
     /* 切換畫面 */
     .login-switch {
@@ -665,21 +746,25 @@
 
         <div class="login-divider"><span>or</span></div>
 
-        <div class="login-btns">
-          <button class="login-provider-btn" id="btn-google-login">
-            <svg width="17" height="17" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Continue with Google
+        <div class="auth-orbs">
+          <button class="auth-orb orb-google" id="orb-google-login">
+            <div class="orb-surface">
+              <svg width="30" height="30" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+            </div>
+            <span class="orb-label">Continue with Google</span>
           </button>
-          <button class="login-provider-btn login-x-btn" id="btn-x-login">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-            </svg>
-            Continue with X
+          <button class="auth-orb orb-x" id="orb-x-login">
+            <div class="orb-surface">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="white">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </div>
+            <span class="orb-label">Continue with X</span>
           </button>
         </div>
 
@@ -719,21 +804,25 @@
 
         <div class="login-divider"><span>or</span></div>
 
-        <div class="login-btns">
-          <button class="login-provider-btn" id="btn-google-register">
-            <svg width="17" height="17" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Sign up with Google
+        <div class="auth-orbs">
+          <button class="auth-orb orb-google" id="orb-google-register">
+            <div class="orb-surface">
+              <svg width="30" height="30" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+            </div>
+            <span class="orb-label">Sign up with Google</span>
           </button>
-          <button class="login-provider-btn login-x-btn" id="btn-x-register">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-            </svg>
-            Sign up with X
+          <button class="auth-orb orb-x" id="orb-x-register">
+            <div class="orb-surface">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="white">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </div>
+            <span class="orb-label">Sign up with X</span>
           </button>
         </div>
 

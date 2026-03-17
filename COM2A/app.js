@@ -2479,12 +2479,12 @@ function initLoginModal() {
   });
 
   // ── Google OAuth（替換為真實 URL）──
-  document.getElementById("btn-google-login")?.addEventListener("click",    () => console.log("[Google Login]"));
-  document.getElementById("btn-google-register")?.addEventListener("click", () => console.log("[Google Register]"));
+  document.getElementById("orb-google-login")?.addEventListener("click",    () => console.log("[Google Login]"));
+  document.getElementById("orb-google-register")?.addEventListener("click", () => console.log("[Google Register]"));
 
   // ── X OAuth（替換為真實 URL）──
-  document.getElementById("btn-x-login")?.addEventListener("click",    () => console.log("[X Login]"));
-  document.getElementById("btn-x-register")?.addEventListener("click", () => console.log("[X Register]"));
+  document.getElementById("orb-x-login")?.addEventListener("click",    () => console.log("[X Login]"));
+  document.getElementById("orb-x-register")?.addEventListener("click", () => console.log("[X Register]"));
 }
 
 // ===== 初始化 =====
