@@ -2393,37 +2393,98 @@ function renderPortfolioView() {
 
 // ===== 登入 Modal =====
 function initLoginModal() {
-  const overlay  = document.getElementById("login-modal");
-  const openBtn  = document.getElementById("btn-login");
-  const closeBtn = document.getElementById("login-close");
-  const googleBtn = document.getElementById("btn-google-login");
-  const xBtn     = document.getElementById("btn-x-login");
+  const overlay   = document.getElementById("login-modal");
+  const openBtn   = document.getElementById("btn-login");
+  const closeBtn  = document.getElementById("login-close");
+  const backBtn   = document.getElementById("login-back");
 
-  const openModal  = () => { if (overlay) overlay.style.display = "flex"; };
+  const screens = {
+    login    : document.getElementById("screen-login"),
+    register : document.getElementById("screen-register"),
+    forgot   : document.getElementById("screen-forgot"),
+  };
+
+  // ── 畫面切換 ──
+  function showScreen(name) {
+    Object.values(screens).forEach(s => { if (s) s.style.display = "none"; });
+    if (screens[name]) screens[name].style.display = "block";
+    if (backBtn) backBtn.style.display = (name === "login") ? "none" : "flex";
+    if (name === "forgot") {
+      const succ = document.getElementById("forgot-success");
+      if (succ) succ.style.display = "none";
+    }
+  }
+
+  const openModal  = () => { if (overlay) { overlay.style.display = "flex"; showScreen("login"); } };
   const closeModal = () => { if (overlay) overlay.style.display = "none"; };
 
   openBtn?.addEventListener("click", openModal);
   closeBtn?.addEventListener("click", closeModal);
+  backBtn?.addEventListener("click",  () => showScreen("login"));
 
-  // 點擊背景關閉
-  overlay?.addEventListener("click", (e) => {
-    if (e.target === overlay) closeModal();
-  });
-
-  // ESC 關閉
+  // 背景點擊關閉
+  overlay?.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && overlay?.style.display === "flex") closeModal();
   });
 
-  // Google 登入 — 可替換為真實 OAuth URL
-  googleBtn?.addEventListener("click", () => {
-    alert("Google 登入功能即將推出！");
+  // ── 畫面跳轉連結 ──
+  document.getElementById("go-register")?.addEventListener("click", (e) => { e.preventDefault(); showScreen("register"); });
+  document.getElementById("go-login")?.addEventListener("click",    (e) => { e.preventDefault(); showScreen("login"); });
+  document.getElementById("go-forgot")?.addEventListener("click",   (e) => { e.preventDefault(); showScreen("forgot"); });
+  document.getElementById("go-login-from-forgot")?.addEventListener("click", (e) => { e.preventDefault(); showScreen("login"); });
+
+  // ── 密碼顯示切換 ──
+  function togglePw(toggleId, inputId) {
+    document.getElementById(toggleId)?.addEventListener("click", () => {
+      const inp = document.getElementById(inputId);
+      if (!inp) return;
+      const isText = inp.type === "text";
+      inp.type = isText ? "password" : "text";
+      const btn = document.getElementById(toggleId);
+      btn?.querySelector(".eye-show")?.style.setProperty("display", isText ? "" : "none");
+      btn?.querySelector(".eye-hide")?.style.setProperty("display", isText ? "none" : "");
+    });
+  }
+  togglePw("login-pw-toggle", "login-password");
+  togglePw("reg-pw-toggle",   "reg-password");
+
+  // ── Email 登入（呼叫你的 API）──
+  document.getElementById("btn-email-login")?.addEventListener("click", () => {
+    const email    = document.getElementById("login-email")?.value.trim();
+    const password = document.getElementById("login-password")?.value;
+    if (!email || !password) return;
+    // TODO: 接上你的後端 API
+    console.log("[Login]", email);
   });
 
-  // X (Twitter) 登入 — 可替換為真實 OAuth URL
-  xBtn?.addEventListener("click", () => {
-    alert("X 登入功能即將推出！");
+  // ── 註冊（呼叫你的 API）──
+  document.getElementById("btn-email-register")?.addEventListener("click", () => {
+    const email   = document.getElementById("reg-email")?.value.trim();
+    const pw      = document.getElementById("reg-password")?.value;
+    const confirm = document.getElementById("reg-confirm")?.value;
+    if (!email || !pw || pw !== confirm) return;
+    // TODO: 接上你的後端 API
+    console.log("[Register]", email);
   });
+
+  // ── 忘記密碼（呼叫你的 API）──
+  document.getElementById("btn-send-reset")?.addEventListener("click", () => {
+    const email = document.getElementById("forgot-email")?.value.trim();
+    if (!email) return;
+    // TODO: 接上你的後端 API
+    console.log("[Reset]", email);
+    const succ = document.getElementById("forgot-success");
+    if (succ) succ.style.display = "flex";
+  });
+
+  // ── Google OAuth（替換為真實 URL）──
+  document.getElementById("btn-google-login")?.addEventListener("click",    () => console.log("[Google Login]"));
+  document.getElementById("btn-google-register")?.addEventListener("click", () => console.log("[Google Register]"));
+
+  // ── X OAuth（替換為真實 URL）──
+  document.getElementById("btn-x-login")?.addEventListener("click",    () => console.log("[X Login]"));
+  document.getElementById("btn-x-register")?.addEventListener("click", () => console.log("[X Register]"));
 }
 
 // ===== 初始化 =====
