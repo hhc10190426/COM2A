@@ -157,10 +157,17 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.logo-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.logo span {
   font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
-  flex-shrink: 0;
 }
 
 .nav-links {
