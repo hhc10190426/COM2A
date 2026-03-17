@@ -634,6 +634,20 @@
     }
     .mkt-ttab.active { background: var(--bg-secondary,#1e1e2e); color: var(--text-primary); }
 
+    .mkt-order-type-row {
+      display: flex; gap: 4px; margin-bottom: 4px;
+    }
+    .mkt-type-btn {
+      flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      background: rgba(255,255,255,0.03); color: var(--text-muted);
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .mkt-type-btn:hover { background: rgba(255,255,255,0.06); color: var(--text-secondary); }
+    .mkt-type-btn.active { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.35); color: var(--accent); }
+
+    .mkt-limit-field { margin-top: 0; }
+
     .mkt-oc-row { display: flex; gap: 6px; }
     .mkt-oc-btn {
       flex: 1; padding: 8px; border-radius: 8px; border: 1.5px solid var(--border);
@@ -1488,6 +1502,10 @@
                   <button class="mkt-ttab active" data-tab="buy">Buy</button>
                   <button class="mkt-ttab" data-tab="sell">Sell</button>
                 </div>
+                <div class="mkt-order-type-row">
+                  <button class="mkt-type-btn active" data-type="market">Market</button>
+                  <button class="mkt-type-btn" data-type="limit">Limit</button>
+                </div>
                 <div class="mkt-oc-row" id="mkt-oc-row"></div>
                 <div class="mkt-trade-field">
                   <label class="mkt-field-label">Amount (USDC)</label>
@@ -1495,6 +1513,10 @@
                     <input type="number" id="mkt-amount" class="mkt-amount-input" placeholder="0.00" min="0" step="1"/>
                     <button class="mkt-max-btn">Max</button>
                   </div>
+                </div>
+                <div class="mkt-trade-field mkt-limit-field" id="mkt-limit-field" style="display:none">
+                  <label class="mkt-field-label">Limit Price (¢)</label>
+                  <input type="number" id="mkt-limit-price" class="mkt-amount-input" placeholder="0.00" min="1" max="99" step="0.1"/>
                 </div>
                 <div class="mkt-trade-info-row">
                   <div class="mkt-tinfo"><span>Avg Price</span><span id="mkt-avg-price">—</span></div>

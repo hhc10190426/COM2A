@@ -1054,11 +1054,13 @@ async function openBinaryDetailModal(m, yesPct, noPct, vol24h, oi, endDate, icon
 }
 
 // ===== 下單 Modal =====
-function openBuyModal(event, question, side, price, initialAmount) {
+function openBuyModal(event, question, side, price, initialAmount, orderType, limitPrice) {
   if (event) event.stopPropagation();
   const existing = document.getElementById("trade-modal");
   if (existing) existing.remove();
 
+  const isLimit = orderType === "limit" && limitPrice != null && limitPrice > 0;
+  const effPrice = isLimit ? limitPrice : price;
   const amtVal = (parseFloat(initialAmount) > 0 ? parseFloat(initialAmount) : 10).toFixed(2);
   const overlay = document.createElement("div");
   overlay.id = "trade-modal";
@@ -1066,10 +1068,11 @@ function openBuyModal(event, question, side, price, initialAmount) {
   overlay.innerHTML = `
     <div class="modal-box trade-modal-box">
       <div class="trade-modal-header">
-        <h3>Buy <span class="${side === "Yes" ? "yes-price" : "no-price"}" style="font-weight:800">${side}</span> Shares</h3>
+        <h3>${isLimit ? "Place Limit Order" : "Buy"} <span class="${side === "Yes" ? "yes-price" : "no-price"}" style="font-weight:800">${side}</span> ${isLimit ? "" : "Shares"}</h3>
         <button class="modal-close" id="close-trade">✕</button>
       </div>
       <p class="trade-modal-market">${question}</p>
+      ${isLimit ? `<p class="trade-modal-type" style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Limit @ ${effPrice}¢</p>` : ""}
       <div class="trade-input-group">
         <label>Amount (USD)</label>
         <div class="trade-input-wrap">
@@ -1080,19 +1083,19 @@ function openBuyModal(event, question, side, price, initialAmount) {
       <div class="trade-summary">
         <div class="trade-summary-row">
           <span>Price per share</span>
-          <span class="stat-value">${price}¢</span>
+          <span class="stat-value">${effPrice}¢</span>
         </div>
         <div class="trade-summary-row">
           <span>Est. shares</span>
-          <span class="stat-value" id="est-shares">${(parseFloat(amtVal) / (price / 100)).toFixed(2)}</span>
+          <span class="stat-value" id="est-shares">${(parseFloat(amtVal) / (effPrice / 100)).toFixed(2)}</span>
         </div>
         <div class="trade-summary-row">
           <span>Est. max payout</span>
-          <span class="stat-value green" id="est-payout">$${(parseFloat(amtVal) / (price / 100)).toFixed(2)}</span>
+          <span class="stat-value green" id="est-payout">$${(parseFloat(amtVal) / (effPrice / 100)).toFixed(2)}</span>
         </div>
       </div>
       <button class="btn-accept" id="confirm-trade" style="margin-top:8px">
-        Confirm — Buy ${side} at ${price}¢
+        ${isLimit ? `Place Limit Order — ${side} @ ${effPrice}¢` : `Confirm — Buy ${side} at ${effPrice}¢`}
       </button>
       <p class="trade-disclaimer">This is a demo. No real money is used.</p>
     </div>
@@ -1104,7 +1107,7 @@ function openBuyModal(event, question, side, price, initialAmount) {
   const input = document.getElementById("trade-amount");
   input.addEventListener("input", () => {
     const amt = parseFloat(input.value) || 0;
-    const shares = amt / (price / 100);
+    const shares = amt / (effPrice / 100);
     document.getElementById("est-shares").textContent = shares.toFixed(2);
     document.getElementById("est-payout").textContent = "$" + shares.toFixed(2);
   });
@@ -1112,7 +1115,10 @@ function openBuyModal(event, question, side, price, initialAmount) {
   document.getElementById("confirm-trade").addEventListener("click", () => {
     const amt = parseFloat(input.value) || 0;
     overlay.remove();
-    showToast(`✓ 模擬下單：Buy ${side} $${amt.toFixed(2)} on "${question.slice(0,40)}..."`);
+    const msg = isLimit
+      ? `✓ 模擬掛單：Limit ${side} @ ${effPrice}¢ $${amt.toFixed(2)} on "${question.slice(0,40)}..."`
+      : `✓ 模擬下單：Buy ${side} $${amt.toFixed(2)} on "${question.slice(0,40)}..."`;
+    showToast(msg);
   });
 }
 
@@ -2565,6 +2571,7 @@ const MOCK_MARKET = {
 
 let mktSelectedOutcome = "yes";
 let mktChartRange      = "1M";
+let mktOrderType       = "market"; // "market" | "limit"
 
 /** 以 SVG 繪製市場價格走勢圖 */
 function renderMktChart(market) {
@@ -2691,15 +2698,39 @@ function renderMarketDetail(market) {
 
   // Avg price / confirm button
   const selOutcome = market.outcomes[mktSelectedOutcome === "yes" ? 0 : 1];
-  document.getElementById("mkt-avg-price").textContent = `${(selOutcome.price).toFixed(3)} USDC`;
+
+  // Market / Limit 切換
+  const limitField = document.getElementById("mkt-limit-field");
+  const limitPriceInput = document.getElementById("mkt-limit-price");
+  document.querySelectorAll(".mkt-type-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.type === mktOrderType);
+    btn.onclick = () => {
+      mktOrderType = btn.dataset.type;
+      if (limitField) limitField.style.display = mktOrderType === "limit" ? "block" : "none";
+      document.querySelectorAll(".mkt-type-btn").forEach(b => b.classList.toggle("active", b.dataset.type === mktOrderType));
+      if (mktOrderType === "limit" && limitPriceInput && !limitPriceInput.value) {
+        limitPriceInput.value = Math.round(selOutcome.price * 100);
+      }
+      renderMarketDetail(market);
+    };
+  });
+  if (limitField) limitField.style.display = mktOrderType === "limit" ? "block" : "none";
+  if (mktOrderType === "limit" && limitPriceInput && !limitPriceInput.value) {
+    limitPriceInput.value = Math.round(selOutcome.price * 100);
+  }
   const confirmBtn = document.getElementById("mkt-confirm-btn");
   const amtInput   = document.getElementById("mkt-amount");
+  const effPrice = mktOrderType === "limit" && limitPriceInput?.value
+    ? parseFloat(limitPriceInput.value) / 100
+    : selOutcome.price;
+  const effPriceCents = Math.round((effPrice || selOutcome.price) * 100);
   if (confirmBtn) {
-    confirmBtn.textContent = `Buy ${selOutcome.label}`;
+    confirmBtn.textContent = mktOrderType === "limit" ? `Place Limit Order` : `Buy ${selOutcome.label}`;
     confirmBtn.className   = `mkt-confirm-btn${mktSelectedOutcome === "no" ? " no-mode" : ""}`;
     confirmBtn.onclick = (e) => {
       const amt = parseFloat(amtInput?.value || 0) || 10;
-      openBuyModal(e, market.title, selOutcome.label, Math.round(selOutcome.price * 100), amt);
+      const limPrice = mktOrderType === "limit" ? (parseFloat(limitPriceInput?.value || 0) || effPriceCents) : null;
+      openBuyModal(e, market.title, selOutcome.label, effPriceCents, amt, mktOrderType, limPrice);
     };
   }
   // Max 按鈕（Demo 模式填 100）
@@ -2708,18 +2739,27 @@ function renderMarketDetail(market) {
     e.stopPropagation();
     if (amtInput) { amtInput.value = "100"; amtInput.dispatchEvent(new Event("input")); }
   };
-  // Potential return from amount input
+  // Potential return from amount input（Limit 時用 limit price 計算）
   const calcReturn = () => {
-    const amt     = parseFloat(amtInput?.value || 0);
-    const shares  = amt > 0 ? (amt / selOutcome.price).toFixed(2) : "—";
-    const ret     = amt > 0 ? `$${(amt / selOutcome.price).toFixed(2)} (+${((1/selOutcome.price - 1)*100).toFixed(0)}%)` : "—";
+    const price = mktOrderType === "limit" && limitPriceInput?.value
+      ? parseFloat(limitPriceInput.value) / 100
+      : selOutcome.price;
+    const amt = parseFloat(amtInput?.value || 0);
+    const shares = amt > 0 && price > 0 ? (amt / price).toFixed(2) : "—";
+    const ret    = amt > 0 && price > 0 ? `$${(amt / price).toFixed(2)} (+${((1/price - 1)*100).toFixed(0)}%)` : "—";
     document.getElementById("mkt-shares").textContent = shares;
     const retEl = document.getElementById("mkt-return");
     if (retEl) { retEl.textContent = ret; retEl.className = mktSelectedOutcome === "no" ? "" : "green"; }
+    const avgEl = document.getElementById("mkt-avg-price");
+    if (avgEl) avgEl.textContent = mktOrderType === "limit" && limitPriceInput?.value
+      ? `${(parseFloat(limitPriceInput.value) / 100).toFixed(3)} USDC`
+      : `${(selOutcome.price).toFixed(3)} USDC`;
   };
   calcReturn();
   amtInput?.removeEventListener("input", calcReturn);
   amtInput?.addEventListener("input", calcReturn);
+  limitPriceInput?.removeEventListener("input", calcReturn);
+  limitPriceInput?.addEventListener("input", calcReturn);
 
   // Resolution
   document.getElementById("mkt-resolution").textContent = market.description;
